@@ -153,6 +153,26 @@ async def decide(agent_id: str, request: Request):
     return {"status": "decided", "agent_id": agent_id, "decision": decision}
 
 
+@app.get("/recent")
+async def recent_activity():
+    """Recent agent activity for the dashboard timeline."""
+    s = state()
+    records = s.recent(30)
+    return [
+        {
+            "id": r.agent_id,
+            "type": r.agent_type,
+            "status": r.status.value if hasattr(r.status, 'value') else str(r.status),
+            "finding": r.finding or "running...",
+            "severity": r.severity,
+            "started": r.started,
+            "finished": r.finished,
+            "decision": r.human_decision,
+        }
+        for r in records
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
@@ -165,99 +185,236 @@ async def dashboard():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agentic Platform</title>
+    <title>Agentic</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
             background: #0a0a0a; color: #e0e0e0;
-            padding: 2rem;
+            max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem;
         }
-        h1 { color: #7af; margin-bottom: 1rem; }
-        h2 { color: #adf; margin: 1.5rem 0 0.5rem; font-size: 1rem; }
-        .card {
-            background: #151515; border: 1px solid #333;
-            border-radius: 6px; padding: 1rem; margin: 0.5rem 0;
-        }
-        .stat { display: inline-block; margin-right: 2rem; }
-        .stat .n { font-size: 2rem; color: #7af; }
-        .stat .label { font-size: 0.8rem; color: #888; }
-        .severity-warning { border-left: 3px solid #fa0; }
-        .severity-action_required { border-left: 3px solid #f44; }
-        .severity-info { border-left: 3px solid #4a4; }
-        .tier-gold { border-left: 3px solid #ffd700; }
-        .tier-silver { border-left: 3px solid #c0c0c0; }
-        .tier-bronze { border-left: 3px solid #cd7f32; }
-        .tier-label { font-weight: bold; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .tier-label.gold { color: #ffd700; }
-        .tier-label.silver { color: #c0c0c0; }
-        .tier-label.bronze { color: #cd7f32; }
-        .finding { margin: 0.5rem 0; }
-        .btn {
-            background: #333; border: 1px solid #555; color: #ddd;
-            padding: 0.3rem 0.8rem; border-radius: 4px; cursor: pointer;
-            margin-right: 0.5rem;
-        }
-        .btn:hover { background: #444; }
-        .btn.approve { border-color: #4a4; }
-        .btn.reject { border-color: #f44; }
-        #digest { white-space: pre-wrap; line-height: 1.6; }
+
+        /* Header */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        header h1 { font-size: 1.5rem; font-weight: 600; color: #fff; }
+        .pulse { width: 10px; height: 10px; border-radius: 50%; background: #4a4; display: inline-block; animation: pulse 2s infinite; margin-right: 0.5rem; }
+        .pulse.idle { background: #555; animation: none; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .header-status { font-size: 0.85rem; color: #888; display: flex; align-items: center; }
+
+        /* Stats row */
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: #111; border: 1px solid #222; border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .stat-card .number { font-size: 2rem; font-weight: 700; line-height: 1; }
+        .stat-card .label { font-size: 0.75rem; color: #666; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-card.active .number { color: #7af; }
+        .stat-card.pending .number { color: #fa0; }
+        .stat-card.completed .number { color: #4a4; }
+        .stat-card.failed .number { color: #f44; }
+
+        /* Sections */
+        section { margin-bottom: 2rem; }
+        section h2 { font-size: 0.85rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+
+        /* Cards */
+        .card { background: #111; border: 1px solid #222; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; }
+        .card.needs-action { border-left: 3px solid #f44; }
+        .card.warning { border-left: 3px solid #fa0; }
+        .card.info { border-left: 3px solid #4a4; }
+        .card.running { border-left: 3px solid #7af; }
+        .card.gold { border-left: 3px solid #ffd700; }
+        .card.silver { border-left: 3px solid #c0c0c0; }
+        .card.bronze { border-left: 3px solid #cd7f32; }
+        .card .row { display: flex; justify-content: space-between; align-items: center; }
+        .card .agent-type { font-weight: 600; font-size: 0.85rem; text-transform: capitalize; }
+        .card .status-badge { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 600; }
+        .badge-running { background: rgba(119,170,255,0.15); color: #7af; }
+        .badge-completed { background: rgba(68,170,68,0.15); color: #4a4; }
+        .badge-failed { background: rgba(255,68,68,0.15); color: #f44; }
+        .badge-awaiting { background: rgba(255,170,0,0.15); color: #fa0; }
+        .card .finding-text { font-size: 0.85rem; color: #aaa; margin-top: 0.5rem; line-height: 1.4; }
+        .card .meta { font-size: 0.7rem; color: #555; margin-top: 0.4rem; }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+        .btn { background: #1a1a1a; border: 1px solid #333; color: #ddd; padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: all 0.15s; }
+        .btn:hover { background: #252525; border-color: #555; }
+        .btn.approve { border-color: #4a4; color: #4a4; }
+        .btn.approve:hover { background: rgba(68,170,68,0.1); }
+        .btn.reject { border-color: #f44; color: #f44; }
+        .btn.reject:hover { background: rgba(255,68,68,0.1); }
+
+        /* Quick actions */
+        .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+        .action-btn { background: #151515; border: 1px solid #333; color: #aaa; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .action-btn:hover { background: #1a1a1a; color: #ddd; border-color: #555; }
+
+        /* Dispatcher info */
+        .dispatcher-bar { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 6px; padding: 0.6rem 1rem; font-size: 0.75rem; color: #555; display: flex; gap: 1.5rem; margin-bottom: 2rem; }
+        .dispatcher-bar span { color: #777; }
+
+        /* Empty state */
+        .empty { color: #444; font-size: 0.85rem; padding: 1rem; text-align: center; }
+
+        /* Timeline dots */
+        .timeline-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 0.5rem; flex-shrink: 0; margin-top: 0.35rem; }
+        .dot-running { background: #7af; }
+        .dot-completed { background: #4a4; }
+        .dot-failed { background: #f44; }
+        .dot-awaiting { background: #fa0; }
     </style>
 </head>
 <body>
-    <h1>Agentic Platform</h1>
-    <div id="stats" class="card"></div>
-    <h2>Pending Review</h2>
-    <div id="pending"></div>
-    <h2>Recent Activity</h2>
-    <div id="recent"></div>
+    <header>
+        <h1>Agentic</h1>
+        <div class="header-status" id="headerStatus">
+            <span class="pulse" id="pulseIndicator"></span>
+            <span id="statusText">connecting...</span>
+        </div>
+    </header>
+
+    <div class="dispatcher-bar" id="dispatcherBar"></div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="actions">
+        <button class="action-btn" onclick="runAgent('guardian')">Run Guardian</button>
+        <button class="action-btn" onclick="runAgent('docs')">Update Docs</button>
+        <button class="action-btn" onclick="runAgent('infra')">Check Infra</button>
+        <button class="action-btn" onclick="runAgent('github')">Repo Health</button>
+        <button class="action-btn" onclick="runAgent('maintenance')">Maintenance</button>
+    </div>
+
+    <section id="pendingSection" style="display:none">
+        <h2>Needs Your Decision</h2>
+        <div id="pending"></div>
+    </section>
+
+    <section>
+        <h2>Activity</h2>
+        <div id="timeline"></div>
+    </section>
 
     <script>
+        function ago(ts) {
+            if (!ts) return '';
+            const diff = Math.floor(Date.now()/1000 - ts);
+            if (diff < 60) return diff + 's ago';
+            if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+            return Math.floor(diff/86400) + 'd ago';
+        }
+
+        function badgeClass(status) {
+            if (status === 'running') return 'badge-running';
+            if (status === 'completed' || status === 'approved') return 'badge-completed';
+            if (status === 'failed') return 'badge-failed';
+            if (status === 'awaiting_approval') return 'badge-awaiting';
+            return '';
+        }
+
+        function dotClass(status) {
+            if (status === 'running') return 'dot-running';
+            if (status === 'completed' || status === 'approved') return 'dot-completed';
+            if (status === 'failed') return 'dot-failed';
+            if (status === 'awaiting_approval') return 'dot-awaiting';
+            return 'dot-completed';
+        }
+
+        function cardClass(r) {
+            if (r.finding && r.finding.includes('GOLD')) return 'gold';
+            if (r.finding && r.finding.includes('SILVER')) return 'silver';
+            if (r.finding && r.finding.includes('BRONZE')) return 'bronze';
+            if (r.status === 'running') return 'running';
+            if (r.status === 'awaiting_approval') return 'needs-action';
+            if (r.status === 'failed') return 'warning';
+            return 'info';
+        }
+
+        function statusLabel(status) {
+            return status.replace('_', ' ').replace('awaiting approval', 'needs review');
+        }
+
         async function refresh() {
-            const res = await fetch('/status');
-            const data = await res.json();
-            const d = data.digest;
+            try {
+                const [statusRes, recentRes] = await Promise.all([
+                    fetch('/status'), fetch('/recent')
+                ]);
+                const data = await statusRes.json();
+                const recent = await recentRes.json();
+                const d = data.digest;
+                const disp = data.dispatcher || {};
 
-            document.getElementById('stats').innerHTML = `
-                <span class="stat"><span class="n">${d.active}</span><br><span class="label">Active</span></span>
-                <span class="stat"><span class="n">${d.pending_review}</span><br><span class="label">Pending</span></span>
-                <span class="stat"><span class="n">${d.completed_today}</span><br><span class="label">Completed</span></span>
-                <span class="stat"><span class="n">${d.failed_today}</span><br><span class="label">Failed</span></span>
-            `;
+                // Header
+                const isAlive = disp.running !== false;
+                document.getElementById('pulseIndicator').className = isAlive ? 'pulse' : 'pulse idle';
+                document.getElementById('statusText').textContent = isAlive
+                    ? `${disp.agent_types?.length || 0} agent types listening`
+                    : 'dispatcher offline';
 
-            const pendingEl = document.getElementById('pending');
-            if (data.pending_review.length === 0) {
-                pendingEl.innerHTML = '<div class="card">Nothing pending.</div>';
-            } else {
-                pendingEl.innerHTML = data.pending_review.map(r => {
-                    // Detect tier from finding text
-                    let tierClass = 'severity-' + r.severity;
-                    let tierLabel = '';
-                    if (r.finding && r.finding.includes('GOLD')) {
-                        tierClass = 'tier-gold';
-                        tierLabel = '<span class="tier-label gold">GOLD</span> ';
-                    } else if (r.finding && r.finding.includes('SILVER')) {
-                        tierClass = 'tier-silver';
-                        tierLabel = '<span class="tier-label silver">SILVER</span> ';
-                    } else if (r.finding && r.finding.includes('BRONZE')) {
-                        tierClass = 'tier-bronze';
-                        tierLabel = '<span class="tier-label bronze">BRONZE</span> ';
-                    }
-                    return `
-                    <div class="card ${tierClass}">
-                        <div class="finding">${tierLabel}${r.finding}</div>
-                        <button class="btn approve" onclick="decide('${r.id}','approve')">Approve</button>
-                        <button class="btn reject" onclick="decide('${r.id}','reject')">Reject</button>
-                    </div>`;
-                }).join('');
+                // Dispatcher bar
+                document.getElementById('dispatcherBar').innerHTML =
+                    `<span>Dispatcher: ${isAlive ? 'active' : 'stopped'}</span>` +
+                    `<span>Queue: ${data.event_queue_depth} events</span>` +
+                    `<span>Workers: ${disp.active_workers || 0} running</span>` +
+                    `<span>Types: ${(disp.agent_types || []).join(', ')}</span>`;
+
+                // Stats
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card active"><div class="number">${d.active}</div><div class="label">Active</div></div>
+                    <div class="stat-card pending"><div class="number">${d.pending_review}</div><div class="label">Pending</div></div>
+                    <div class="stat-card completed"><div class="number">${d.completed_today}</div><div class="label">Completed Today</div></div>
+                    <div class="stat-card failed"><div class="number">${d.failed_today}</div><div class="label">Failed Today</div></div>
+                `;
+
+                // Pending review
+                const pendingSection = document.getElementById('pendingSection');
+                const pendingEl = document.getElementById('pending');
+                const pendingItems = recent.filter(r => r.status === 'awaiting_approval');
+                if (pendingItems.length > 0) {
+                    pendingSection.style.display = 'block';
+                    pendingEl.innerHTML = pendingItems.map(r => `
+                        <div class="card needs-action">
+                            <div class="row">
+                                <span class="agent-type">${r.type}</span>
+                                <span class="status-badge badge-awaiting">needs review</span>
+                            </div>
+                            <div class="finding-text">${r.finding}</div>
+                            <div class="btn-group">
+                                <button class="btn approve" onclick="decide('${r.id}','approve')">Approve</button>
+                                <button class="btn reject" onclick="decide('${r.id}','reject')">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    pendingSection.style.display = 'none';
+                }
+
+                // Timeline
+                const timelineEl = document.getElementById('timeline');
+                if (recent.length === 0) {
+                    timelineEl.innerHTML = '<div class="empty">No activity yet. Use the buttons above to run an agent.</div>';
+                } else {
+                    timelineEl.innerHTML = recent.map(r => `
+                        <div class="card ${cardClass(r)}">
+                            <div class="row">
+                                <div style="display:flex; align-items:flex-start;">
+                                    <span class="timeline-dot ${dotClass(r.status)}"></span>
+                                    <div>
+                                        <span class="agent-type">${r.type}</span>
+                                        <div class="finding-text">${r.finding}</div>
+                                        <div class="meta">${ago(r.started)}${r.finished ? ' · took ' + Math.round(r.finished - r.started) + 's' : ''}</div>
+                                    </div>
+                                </div>
+                                <span class="status-badge ${badgeClass(r.status)}">${statusLabel(r.status)}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {
+                document.getElementById('statusText').textContent = 'disconnected';
+                document.getElementById('pulseIndicator').className = 'pulse idle';
             }
-
-            const recentEl = document.getElementById('recent');
-            recentEl.innerHTML = data.active_agents.map(r => `
-                <div class="card severity-info">
-                    <strong>${r.type}</strong> — running (trigger: ${r.trigger})
-                </div>
-            `).join('') || '<div class="card">No recent activity.</div>';
         }
 
         async function decide(agentId, decision) {
@@ -269,8 +426,17 @@ async def dashboard():
             refresh();
         }
 
+        async function runAgent(type) {
+            await fetch('/spawn', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({agent_type: type, trigger: 'dashboard'})
+            });
+            refresh();
+        }
+
         refresh();
-        setInterval(refresh, 5000);
+        setInterval(refresh, 3000);
     </script>
 </body>
 </html>"""
