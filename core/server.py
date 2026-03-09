@@ -28,8 +28,29 @@ sys.path.insert(0, str(ROOT))
 
 from core.event_queue import emit, queue
 from core.state import state
+from core.dispatcher import Dispatcher
+
+# Global dispatcher instance
+_dispatcher: Dispatcher | None = None
 
 app = FastAPI(title="Agentic Platform", version="0.1.0")
+
+
+@app.on_event("startup")
+async def startup():
+    """Start the dispatcher when the server boots."""
+    global _dispatcher
+    _dispatcher = Dispatcher()
+    _dispatcher.start()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Stop the dispatcher on server shutdown."""
+    global _dispatcher
+    if _dispatcher:
+        _dispatcher.stop()
+
 
 # ---------------------------------------------------------------------------
 # Event ingestion
@@ -66,6 +87,7 @@ async def platform_status():
             for r in s.pending_review()
         ],
         "event_queue_depth": queue().pending(),
+        "dispatcher": _dispatcher.status() if _dispatcher else {"running": False},
     }
 
 
