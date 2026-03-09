@@ -27,6 +27,7 @@ jobs:
           from core.metadata import extract_metadata
           from core.dispatcher import Dispatcher
           from core.export import list_exports
+          from core.embeddings import embed_text, EMBEDDING_DIM
           from agents.configs import AGENTS, list_agent_types
           s = state()
           d = s.digest()
@@ -40,6 +41,7 @@ jobs:
           print(f'Dispatcher trigger rules: {len(disp.status()[\"trigger_rules\"])} event types')
           exports = list_exports()
           print(f'Export packages: {len(exports)}')
+          print(f'Embedding dim: {EMBEDDING_DIM}')
           "
 
       - name: Check workspace integrity

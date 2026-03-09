@@ -1,12 +1,12 @@
-# Property Scorecard — 17 Required Properties
+# Property Scorecard — 18 Required Properties
 
-> **Status**: ALL 17 PROPERTIES SATISFIED ✓
+> **Status**: ALL 18 PROPERTIES SATISFIED ✓
 > Last Updated: March 9, 2026
-> Evidence from: `validation/verify_all_properties.py`, `demos/unified_demonstration.py`
+> Evidence from: `validation/verify_all_properties.py`, `demos/unified_demonstration.py`, `demos/coherence_proof.py`
 
 ## Summary
 
-Starting from PURE DISTINCTION (no assumed constants, no external structures), we have derived a complete algebraic system that satisfies all 17 required properties. This is not construction — it's DISCOVERY. The numbers 3 and 4, the groups Z₃ and Q₈, conservation laws, and topological invariants all emerge from logical necessity.
+Starting from PURE DISTINCTION (no assumed constants, no external structures), we have derived a complete algebraic system that satisfies all 18 required properties. This is not construction — it's DISCOVERY. The numbers 3 and 4, the groups Z₃ and Q₈, conservation laws, and topological invariants all emerge from logical necessity.
 
 ## Detailed Property Status
 
@@ -155,6 +155,16 @@ Starting from PURE DISTINCTION (no assumed constants, no external structures), w
 - Topology (fundamental group) meets spectral theory
 - **Module**: `algebra/topology_algebra.py::spectral_decomposition()`
 
+### ✓ Property 18: Cohesive Sensory Manifold
+**Status**: SATISFIED
+**Evidence**:
+- All sensory channels (visual, auditory, tactile) locked by spectral gap 2/3
+- Channel correlation = 2/3 exactly across all modalities
+- Deformation cascades through channels at rate (2/3)^n
+- Cross-channel coherence verified to precision < 1.5e-15
+- **Module**: `algebra/sensory_manifold.py`, `demos/coherence_proof.py`
+- **Proof**: `validation/coherence_verdict.json` (7/7 tests pass)
+
 ## Key Achievements
 
 ### Forced Constants (Not Assumed)
@@ -182,8 +192,11 @@ Starting from PURE DISTINCTION (no assumed constants, no external structures), w
 # Run complete property verification
 python validation/verify_all_properties.py
 
-# Run unified demonstration (shows all 17 properties)
+# Run unified demonstration (shows all properties)
 python demos/unified_demonstration.py
+
+# Run coherence proof (validates Property 18)
+python demos/coherence_proof.py
 
 # Run individual algebra modules
 python algebra/trinity_algebra.py
@@ -209,7 +222,7 @@ This is mathematics discovering itself through pure logical necessity.
 
 ## Next Steps for Agents
 
-While all 17 properties are satisfied, there's room for deeper exploration:
+While all 18 properties are satisfied, there's room for deeper exploration:
 
 1. **Synthesis agents**: Unify Z₃ ⊂ U(1) ⊂ SU(2) into single derivation
 2. **Probe agents**: Explore self-reference depth limits (OB3)

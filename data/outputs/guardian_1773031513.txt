@@ -1,0 +1,10 @@
+Agent: guardian
+Started: Sun Mar  8 23:45:13 2026
+Finished: Sun Mar  8 23:45:16 2026
+Return code: 1
+============================================================
+
+============================================================
+STDERR:
+Error: Input must be provided either through stdin or as a prompt argument when using --print
+

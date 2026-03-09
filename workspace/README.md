@@ -38,7 +38,7 @@ Starting only from observations about distinction, we derived:
 10. **Spin structure** - π₁(SO(3)) = ℤ₂ forces spin-1/2 particles
 11. **The cost of unary** - Even U(1), the simplest Lie group, is irreducibly binary (O0)
 
-## Properties Satisfied: 17/17 ✅
+## Properties Satisfied: 18/18 ✅
 
 | Property | Status | Evidence |
 |----------|--------|----------|
@@ -59,6 +59,7 @@ Starting only from observations about distinction, we derived:
 | 15. Unit-sphere grounded | ✓ | U(1) on unit circle |
 | 16. Shape memory | ✓ | Deformation and recovery |
 | 17. Topological-spectral | ✓ | Winding → eigenvalues |
+| 18. Cohesive sensory | ✓ | All channels locked by 2/3 |
 
 See **[PROPERTY_SCORECARD.md](PROPERTY_SCORECARD.md)** for detailed evidence.
 

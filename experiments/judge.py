@@ -84,6 +84,7 @@ class MechanicalResult:
 def phase1_mechanical(run_path: Path) -> MechanicalResult:
     """Phase 1: Mechanical pre-checks — no LLM needed."""
     result = MechanicalResult()
+    run_path = run_path.resolve()
 
     # Collect artifacts
     all_files = [f for f in run_path.rglob("*") if f.is_file()]

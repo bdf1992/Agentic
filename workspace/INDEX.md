@@ -35,7 +35,10 @@ workspace/
 │
 ├── synthesis/        ← Cross-cutting pattern documents (.md)
 │   ├── synthesis_confluences.md           Pattern connections
-│   └── synthesis_grand_unification.md     Unified derivation chain
+│   ├── synthesis_grand_unification.md     Unified derivation chain
+│   ├── synthesis_hidden_18th_property.md  Property 18: Cohesive sensory manifold
+│   ├── SYNTHESIS_72HOUR_SPRINT.md         Complete confluence map & assessment
+│   └── CONFLUENCE_DIAGRAMS.md             Visual maps of mathematical unity
 │
 ├── demos/            ← Runnable demonstrations and validators (.py)
 │   ├── forced_structures.py       Original complete derivation
@@ -47,11 +50,18 @@ workspace/
 │   ├── audio_renderer.py          WAV audio from eigenvalue harmonics
 │   ├── deformation_renderer.py     Interactive deformation with coherent channel response
 │   ├── fractal_renderer.py        Self-recursive distinction fractal (Property 9)
+│   ├── automaton_renderer.py      Z₃ cellular automaton (Properties 8, 10)
+│   ├── ouroboros_renderer.py      Self-encoding system portrait (Property 4)
+│   ├── embedding_renderer.py     LLM embedding visualization (Property 12)
+│   ├── coherence_proof.py        Master coherence verification (all 18 properties)
 │   ├── render_output.html         Generated WebGL visualization (open in browser)
 │   ├── deformation_output.html    Generated deformation demo (open in browser)
 │   ├── fractal_output.html        Generated fractal zoom demo (open in browser)
+│   ├── automaton_output.html      Generated cellular automaton (open in browser)
+│   ├── ouroboros_output.html      Generated self-portrait (open in browser)
 │   ├── distinction_chord.wav      Generated Z₃ augmented triad audio
-│   └── eigenvalue_sequence.wav    Generated eigenvalue frequency sequence
+│   ├── eigenvalue_sequence.wav    Generated eigenvalue frequency sequence
+│   └── embedding_output.html     Generated LLM embedding viz (open in browser)
 │
 ├── bridges/          ← Cross-domain connectors (.py)
 │   ├── llm_bridge.py              LLM embedding integration
@@ -59,6 +69,7 @@ workspace/
 │
 ├── validation/       ← Test suites and health reports
 │   ├── verify_all_properties.py   17-property verification
+│   ├── coherence_verdict.json     Master coherence proof results
 │   └── GUARDIAN_REPORT.md         Latest guardian findings
 │
 ├── CLAUDE.md         ← Agent build rules (DO NOT MOVE)

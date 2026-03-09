@@ -1,0 +1,16 @@
+{
+  "test": "coherence_proof",
+  "passed": true,
+  "score": "7/7",
+  "results": {
+    "channel_correlation": "pass",
+    "deformation_recovery": "pass",
+    "texture_self_similarity": "pass",
+    "z3_conservation": "pass",
+    "gauss_bonnet": "pass",
+    "all_properties_present": "pass",
+    "cross_channel_deformation": "pass"
+  },
+  "spectral_gap": "2/3",
+  "properties_covered": "18/18"
+}

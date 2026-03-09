@@ -1,0 +1,119 @@
+{
+  "run_id": "cartography_001",
+  "timestamp": "2026-03-08 23:58:37",
+  "mechanical": {
+    "py_files": [
+      "probe_001.py"
+    ],
+    "py_results": {
+      "probe_001.py": {
+        "runs": true
+      }
+    },
+    "all_code_runs": true,
+    "has_eigenvalues": true,
+    "has_numerical_output": true,
+    "smuggled_constants": [],
+    "artifact_count": 3
+  },
+  "llm_scores": {
+    "scores": {
+      "invariant": {
+        "score": "partial",
+        "evidence": "Lines 37-40: claims triad monoid is 'unique 3-element monoid with absorber and involution' without proof or exhaustive check",
+        "weakness": "needs actual enumeration of all 3-element monoids to prove uniqueness"
+      },
+      "spectral": {
+        "score": "present",
+        "evidence": "Lines 274-300: explicit eigenvalue computation, spectral gap = 1/3 for triad and 9-state algebras",
+        "weakness": "would be stronger with spectral decomposition or eigenvector analysis"
+      },
+      "semantically_mappable": {
+        "score": "partial",
+        "evidence": "Lines 88-92: labels like 'neither', 'A_only', 'both' map to Boolean states; Lines 472-478: gates map to operations",
+        "weakness": "mapping is suggestive rather than systematic - no formal semantic algebra defined"
+      },
+      "ouroboros": {
+        "score": "present",
+        "evidence": "Lines 334-358: stationary vector is fixed point of transition matrix; Lines 78-83: algebra encodes its own fixed points",
+        "weakness": "doesn't show encoding multiplication table on itself"
+      },
+      "time_like": {
+        "score": "present",
+        "evidence": "Lines 381-413: entropy increases over time in Markov chain; Lines 105-106: decay rate (2/3)^n toward absorber",
+        "weakness": "would be stronger with explicit time operator or clock algebra"
+      },
+      "space_like": {
+        "score": "present",
+        "evidence": "Lines 416-431: Boolean lattice adjacency matrix, 2-cube graph with spectrum {2,0,0,-2}",
+        "weakness": "only demonstrates for Boolean component, not full 9-state algebra"
+      },
+      "physics_like": {
+        "score": "present",
+        "evidence": "Lines 434-467: Z_2 charge conservation in non-boundary sector, symmetry breaking at boundary",
+        "weakness": "conservation law is multiplicative not additive; no Noether theorem"
+      },
+      "logic_gated": {
+        "score": "present",
+        "evidence": "Lines 469-488: explicit gates IDENTITY(+1), NOT(-1), RESET(0) with verification of involution",
+        "weakness": "limited to three gates, no composition rules or universal gate set"
+      },
+      "self_recursive": {
+        "score": "present",
+        "evidence": "Lines 489-521: T^n converges to stationary distribution monotonically",
+        "weakness": "convergence shown numerically not analytically"
+      },
+      "living_state": {
+        "score": "absent",
+        "evidence": "no thermodynamic potential, free energy, or temperature defined",
+        "weakness": "would need Hamiltonian, partition function, or entropy production rate"
+      },
+      "discrete_continuous_bridge": {
+        "score": "present",
+        "evidence": "Lines 522-551: rate matrix L = T - I generates continuous-time Markov chain, e^L verified",
+        "weakness": "embedding is trivial (T at unit time); no continuum limit shown"
+      },
+      "llm_integrable": {
+        "score": "absent",
+        "evidence": "no embedding or projection code implemented",
+        "weakness": "would need actual interface to vector embeddings or tokenization"
+      },
+      "maps_known_structures": {
+        "score": "partial",
+        "evidence": "Line 46: mentions 'Klein four-group' for Z_2 x Z_2 but doesn't prove isomorphism",
+        "weakness": "no formal isomorphism proofs or category theory mappings"
+      },
+      "dimensionless_ratios": {
+        "score": "present",
+        "evidence": "Lines 554-571: explicit ratios 3/4, 1/3, 1/2 derived from structure not constants",
+        "weakness": "ratios emerge but aren't shown to be fundamental or universal"
+      },
+      "unit_sphere_grounded": {
+        "score": "present",
+        "evidence": "Lines 573-588: stationary distribution on L^1 unit sphere (probability simplex)",
+        "weakness": "only shows normalization, not geometric interpretation"
+      },
+      "shape_memory": {
+        "score": "absent",
+        "evidence": "no deformation theory or recovery mechanism shown",
+        "weakness": "would need explicit deformation map with information preservation"
+      },
+      "topological_spectral": {
+        "score": "present",
+        "evidence": "Lines 591-619: graph Laplacian computed, algebraic connectivity, Betti number \u03b2_0 = 1",
+        "weakness": "only \u03b2_0 shown, no higher Betti numbers or spectral-topological theorem"
+      }
+    },
+    "smuggled_constants": [],
+    "strongest_property": "spectral",
+    "weakest_claim": "invariant",
+    "overall_assessment": "Solid mathematical derivation with 12/17 properties demonstrated through explicit computation, but the uniqueness claim for the triad monoid lacks proof and several properties (living_state, llm_integrable, shape_memory) are entirely absent."
+  },
+  "summary": {
+    "present": 11,
+    "partial": 3,
+    "absent": 3,
+    "total": 17
+  },
+  "verdict": "PASS"
+}

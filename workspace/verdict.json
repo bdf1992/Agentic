@@ -1,13 +1,19 @@
 {
   "run_id": "workspace",
-  "timestamp": "2026-03-09 01:48:51",
+  "timestamp": "2026-03-09 08:26:45",
   "mechanical": {
     "py_files": [
       "algebra\\boundary_mediator.py",
       "algebra\\category_distinction.py",
       "algebra\\conservation_algebra.py",
+      "algebra\\conservation_computer.py",
+      "algebra\\distinction_engine.py",
+      "algebra\\failure_cartography.py",
       "algebra\\fixedpoint_algebra.py",
+      "algebra\\fractal_fixedpoint.py",
+      "algebra\\measurement_collapse.py",
       "algebra\\memory_algebra.py",
+      "algebra\\operator_zoo.py",
       "algebra\\quaternion_algebra.py",
       "algebra\\quaternion_spectral.py",
       "algebra\\sensory_manifold.py",
@@ -16,17 +22,24 @@
       "algebra\\spectral_gap_proof.py",
       "algebra\\surface_algebra.py",
       "algebra\\symmetry_algebra.py",
+      "algebra\\thermodynamics_algebra.py",
       "algebra\\topology_algebra.py",
       "algebra\\trinity_algebra.py",
+      "algebra\\unary_fixedpoint_bridge.py",
       "algebra\\__init__.py",
       "bridges\\llm_bridge.py",
       "bridges\\unified_confluences.py",
       "bridges\\__init__.py",
       "demos\\audio_renderer.py",
+      "demos\\automaton_renderer.py",
+      "demos\\coherence_proof.py",
       "demos\\deformation_renderer.py",
+      "demos\\embedding_renderer.py",
       "demos\\forced_structures.py",
+      "demos\\fractal_renderer.py",
       "demos\\full_system_test.py",
       "demos\\observation_unification.py",
+      "demos\\ouroboros_renderer.py",
       "demos\\ultimate_confluence.py",
       "demos\\unified_demonstration.py",
       "demos\\webgl_renderer.py",
@@ -44,10 +57,28 @@
       "algebra\\conservation_algebra.py": {
         "runs": true
       },
+      "algebra\\conservation_computer.py": {
+        "runs": true
+      },
+      "algebra\\distinction_engine.py": {
+        "runs": true
+      },
+      "algebra\\failure_cartography.py": {
+        "runs": true
+      },
       "algebra\\fixedpoint_algebra.py": {
         "runs": true
       },
+      "algebra\\fractal_fixedpoint.py": {
+        "runs": true
+      },
+      "algebra\\measurement_collapse.py": {
+        "runs": true
+      },
       "algebra\\memory_algebra.py": {
+        "runs": true
+      },
+      "algebra\\operator_zoo.py": {
         "runs": true
       },
       "algebra\\quaternion_algebra.py": {
@@ -74,10 +105,16 @@
       "algebra\\symmetry_algebra.py": {
         "runs": true
       },
+      "algebra\\thermodynamics_algebra.py": {
+        "runs": true
+      },
       "algebra\\topology_algebra.py": {
         "runs": true
       },
       "algebra\\trinity_algebra.py": {
+        "runs": true
+      },
+      "algebra\\unary_fixedpoint_bridge.py": {
         "runs": true
       },
       "algebra\\__init__.py": {
@@ -95,16 +132,31 @@
       "demos\\audio_renderer.py": {
         "runs": true
       },
+      "demos\\automaton_renderer.py": {
+        "runs": true
+      },
+      "demos\\coherence_proof.py": {
+        "runs": true
+      },
       "demos\\deformation_renderer.py": {
         "runs": true
       },
+      "demos\\embedding_renderer.py": {
+        "runs": true
+      },
       "demos\\forced_structures.py": {
+        "runs": true
+      },
+      "demos\\fractal_renderer.py": {
         "runs": true
       },
       "demos\\full_system_test.py": {
         "runs": true
       },
       "demos\\observation_unification.py": {
+        "runs": true
+      },
+      "demos\\ouroboros_renderer.py": {
         "runs": true
       },
       "demos\\ultimate_confluence.py": {
@@ -130,110 +182,10 @@
     "has_eigenvalues": true,
     "has_numerical_output": true,
     "smuggled_constants": [],
-    "artifact_count": 85
+    "artifact_count": 110
   },
   "llm_scores": {
-    "scores": {
-      "invariant": {
-        "score": "present",
-        "evidence": "Trinity forced from O1 in derivation_01_trinity.md, quaternions from O2 in derivation_02_quaternion.md, spectral gap audit shows 2/3 emerges from self-consistency",
-        "weakness": "spectral_gap_audit.py reveals 2/3 isn't universally forced, depends on operator choice"
-      },
-      "spectral": {
-        "score": "present",
-        "evidence": "trinity_algebra.py computes eigenvalues, quaternion_spectral.py full spectral decomposition, spectral_gap_proof.py derives 2/3 gap",
-        "weakness": "spectral gap calculation assumes specific transition probabilities not derived from observations"
-      },
-      "semantically_mappable": {
-        "score": "present",
-        "evidence": "sensory_manifold.py maps Z3 to colors/geometry, Z2 to hue polarity, spectral gap to perfect fifth musical interval",
-        "weakness": "mappings are suggestive but not proven unique or necessary"
-      },
-      "ouroboros": {
-        "score": "present",
-        "evidence": "fixedpoint_algebra.py shows self-reference depth calculation, boundary as universal fixed point",
-        "weakness": "self-encoding demonstrated abstractly but not concretely implemented"
-      },
-      "time_like": {
-        "score": "present",
-        "evidence": "memory_algebra.py shift operators create sequences, spectral gap drives irreversible decay at rate (2/3)^n",
-        "weakness": "no explicit time parameter or clock mechanism shown"
-      },
-      "space_like": {
-        "score": "present",
-        "evidence": "quaternion_algebra.py Hamming distance, surface_algebra.py embeds structures on manifolds",
-        "weakness": "locality structure basic, no metric space properly defined"
-      },
-      "physics_like": {
-        "score": "present",
-        "evidence": "conservation_algebra.py derives CL1-CL3 from observations, charge conservation verified, Noether correspondence shown",
-        "weakness": "conservation shown to fail in evolution test, only works modulo 3"
-      },
-      "logic_gated": {
-        "score": "present",
-        "evidence": "quaternion_algebra.py binary states (0,0),(1,0),(0,1),(1,1) with Boolean operations",
-        "weakness": "gates mentioned but not explicitly implemented as computational units"
-      },
-      "self_recursive": {
-        "score": "present",
-        "evidence": "fixedpoint_algebra.py fixed points, distinction operator cycles with period 3",
-        "weakness": "recursion depth limited, no infinite regress handling"
-      },
-      "living_state": {
-        "score": "partial",
-        "evidence": "memory_algebra.py shows evolution dynamics, boundary absorption creates decay",
-        "weakness": "no entropy calculation, no free energy, thermodynamics claimed but not computed"
-      },
-      "discrete_continuous_bridge": {
-        "score": "present",
-        "evidence": "topology_algebra.py Z3 embeds in U(1) as cube roots, Q8 in SU(2), comprehensive surface embeddings",
-        "weakness": "embeddings shown but continuity of mappings not proven"
-      },
-      "llm_integrable": {
-        "score": "present",
-        "evidence": "llm_bridge.py maps to 768D embeddings, preserves algebraic structure",
-        "weakness": "no actual LLM integration demonstrated, just dimension matching"
-      },
-      "maps_known_structures": {
-        "score": "present",
-        "evidence": "Z3, Q8, U(1), SU(2), SO(3) all explicitly identified and mapped",
-        "weakness": "isomorphisms claimed but not all rigorously proven"
-      },
-      "dimensionless_ratios": {
-        "score": "present",
-        "evidence": "2/3 spectral gap, ratios derived not assumed, all pure numbers",
-        "weakness": "some physical interpretations smuggle dimensional thinking"
-      },
-      "unit_sphere_grounded": {
-        "score": "present",
-        "evidence": "U(1) unit circle, SU(2) unit quaternions, explicit normalization shown",
-        "weakness": "geometric interpretation sometimes loose"
-      },
-      "shape_memory": {
-        "score": "present",
-        "evidence": "shape_memory.py elastic deformation with spring constant 2/3, recovery demonstrated",
-        "weakness": "implementation basic, no complex deformation paths tested"
-      },
-      "topological_spectral": {
-        "score": "present",
-        "evidence": "winding numbers give spectrum, graph Laplacian in quaternion_spectral.py",
-        "weakness": "connection more stated than deeply proven"
-      }
-    },
-    "smuggled_constants": [
-      "440 Hz base frequency in audio_renderer.py",
-      "768 embedding dimension assumes transformer standard",
-      "some matrix dimensions chosen for convenience not derived"
-    ],
-    "strongest_property": "invariant",
-    "weakest_claim": "living_state",
-    "overall_assessment": "Strong mathematical derivations from first principles with genuine forced structures (Z3, Q8), but some properties overclaimed especially thermodynamic interpretations, and spectral gap 2/3 shown to depend on operator choice not purely forced."
+    "skipped": true
   },
-  "summary": {
-    "present": 16,
-    "partial": 1,
-    "absent": 0,
-    "total": 17
-  },
-  "verdict": "STRONG_PASS"
+  "verdict": "MECHANICAL_ONLY"
 }

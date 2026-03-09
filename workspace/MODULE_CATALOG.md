@@ -2,7 +2,7 @@
 
 > **Purpose**: Complete reference for every module in the workspace
 > **Last Updated**: March 9, 2026 by Documentation Agent
-> **Status**: All 30 modules documented
+> **Status**: All 44 modules documented (24 algebra, 14 demos, 2 bridges, 2 validation, 2 __init__)
 
 ## Core Algebra Modules (`algebra/`)
 
@@ -131,6 +131,71 @@
 - `compile_evidence()` — gathers all spectral gap instances
 **Validates**: 2/3 gap is universal
 
+### distinction_engine.py
+**Purpose**: Calculator for forced algebraic structures from distinctions
+**Key Classes**: `Distinction`, `DistinctionEngine`
+**Key Functions**:
+- `from_count()` — generates structure from n distinctions
+- `compute_forced_structure()` — derives group and properties
+**Discovers**: What algebra is forced by n distinctions
+
+### unary_fixedpoint_bridge.py
+**Purpose**: Shows O0 (unary incoherence) connects to O8 (fixed points)
+**Key Classes**: `UnaryFixedPointBridge`
+**Key Functions**:
+- `show_unary_requires_binary()` — proves unary needs distinction
+- `find_forced_fixedpoints()` — fixed points from unary attempt
+**Proves**: Even trying to be unary creates fixed points
+
+### conservation_computer.py
+**Purpose**: Computes all conserved quantities in the system
+**Key Classes**: `ConservationComputer`
+**Key Functions**:
+- `find_all_conserved()` — discovers conservation laws
+- `verify_noether()` — checks symmetry→conservation
+**Computes**: Complete list of conserved quantities
+
+### measurement_collapse.py
+**Purpose**: Measurement-induced state collapse from distinction
+**Key Classes**: `MeasurementCollapse`
+**Key Functions**:
+- `measure()` — collapses superposition to eigenstate
+- `collapse_dynamics()` — evolution under measurement
+**Shows**: How distinction forces measurement collapse
+
+### thermodynamics_algebra.py
+**Purpose**: Thermodynamic properties from algebraic structures
+**Key Classes**: `ThermodynamicAlgebra`
+**Key Functions**:
+- `entropy()` — computes entropy from state distribution
+- `temperature_from_gap()` — relates spectral gap to temperature
+**Derives**: Thermodynamics from pure algebra
+
+### operator_zoo.py
+**Purpose**: Collection of all operators in the system
+**Key Classes**: `OperatorZoo`
+**Key Functions**:
+- `catalog_operators()` — lists all operators with properties
+- `find_commutators()` — computes commutation relations
+**Catalogs**: Complete operator algebra
+
+### fractal_fixedpoint.py
+**Purpose**: Fractal geometry from fixed point observation (O8)
+**Key Classes**: `FractalFromFixedPoint`
+**Key Functions**:
+- `sierpinski_from_trinity()` — Sierpinski triangle from Z₃
+- `julia_from_fixedpoint()` — Julia sets from fixed points
+**Creates**: Fractal structures from self-reference
+
+### failure_cartography.py
+**Purpose**: Maps where the forced math framework breaks
+**Key Classes**: `FailureCartographer`
+**Key Functions**:
+- `test_z5_derivability()` — shows framework can't produce primes > 3
+- `test_dependent_distinctions()` — shows (2/3)^n breaks with dependencies
+- `test_metric_from_distinction()` — shows no forced metric, only topology
+**Discovers**: Framework limitations and boundaries
+
 ## Demonstration Modules (`demos/`)
 
 ### forced_structures.py
@@ -172,6 +237,32 @@
 **Purpose**: Interactive deformation with coherent response
 **Output**: `deformation_output.html`
 **Shows**: Shape memory and recovery dynamics
+
+### fractal_renderer.py
+**Purpose**: Self-recursive distinction fractal visualization
+**Output**: `fractal_output.html`
+**Shows**: Fractal patterns from fixed points (Property 9)
+
+### automaton_renderer.py
+**Purpose**: Z₃ cellular automaton visualization
+**Output**: `automaton_output.html`
+**Shows**: Logic gates and living states (Properties 8, 10)
+
+### ouroboros_renderer.py
+**Purpose**: Self-encoding system portrait
+**Output**: `ouroboros_output.html`
+**Shows**: Self-encoding ouroboros property (Property 4)
+
+### embedding_renderer.py
+**Purpose**: LLM embedding space visualization
+**Output**: `embedding_output.html`
+**Shows**: 768D embeddings projected to 3D (Property 12)
+
+### coherence_proof.py
+**Purpose**: Master coherence verification - proves all channels are locked
+**Output**: `validation/coherence_verdict.json`
+**Tests**: 7 coherence properties including channel correlation, conservation, topology
+**Result**: 7/7 PASS, all 18 properties covered
 
 ## Bridge Modules (`bridges/`)
 

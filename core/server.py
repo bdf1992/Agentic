@@ -35,6 +35,7 @@ from agents.configs import AGENTS, get_agent_config, list_agent_types
 from agents.spawner import spawn_headless, spawn_interactive, get_active, get_output, list_outputs
 from core.dispatcher import Dispatcher
 from core.export import export_package, list_exports
+from core.embeddings import embed_text, embed_query
 
 app = FastAPI(title="Agentic Platform", version="0.3.0")
 
@@ -440,7 +441,8 @@ async def index_outputs():
         parts = doc_id.rsplit("_", 1)
         agent_type = parts[0] if len(parts) > 1 else "unknown"
         meta = extract_metadata(text, agent_type=agent_type)
-        doc = Document(id=doc_id, text=text[:5000], metadata={
+        embedding = embed_text(text[:5000])
+        doc = Document(id=doc_id, text=text[:5000], embedding=embedding, metadata={
             **meta.to_dict(),
             "filename": f.name,
             "size": f.stat().st_size,
@@ -496,6 +498,28 @@ async def search_outputs(q: str = "", agent_type: str = "", role: str = "",
         "agent_type": agent_type, "role": role, "concept": concept,
         "observation": observation, "prop": prop,
     }, "total_matches": len(results)}
+
+
+@app.get("/semantic-search")
+async def semantic_search(q: str = "", top_k: int = 10):
+    """Semantic search using TF-IDF embeddings and cosine similarity.
+
+    Unlike /search-outputs (text matching), this finds conceptually similar
+    outputs even if they use different words.
+    """
+    if not q:
+        return {"results": [], "query": ""}
+    query_vec = embed_query(q)
+    matches = _output_store.search(query_vec, top_k=top_k)
+    results = []
+    for doc, score in matches:
+        results.append({
+            "agent_id": doc.id,
+            "score": round(score, 4),
+            "context": doc.text[:300],
+            "metadata": doc.metadata,
+        })
+    return {"results": results, "query": q, "mode": "semantic"}
 
 
 @app.get("/knowledge")

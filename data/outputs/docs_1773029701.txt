@@ -1,0 +1,10 @@
+Agent: docs
+Started: Sun Mar  8 23:15:01 2026
+Finished: Sun Mar  8 23:15:03 2026
+Return code: 1
+============================================================
+
+============================================================
+STDERR:
+Error: Input must be provided either through stdin or as a prompt argument when using --print
+

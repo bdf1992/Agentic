@@ -1,0 +1,5 @@
+Agent: docs
+Severity: info
+Time: Sun Mar  8 23:32:10 2026
+============================================================
+Updated README.md and CLAUDE.md to reflect current repository structure: replaced outdated repo references (RiftEngine/FieldForge/InvertedSand) with CatalystCore, documented new agent infrastructure (configs.py, spawner.py), updated stats (10 commits, 25 Python files), and clarified data/ directory structure.

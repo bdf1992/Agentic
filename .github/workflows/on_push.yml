@@ -29,11 +29,13 @@ jobs:
           from core.metadata import extract_metadata
           from core.dispatcher import Dispatcher
           from core.export import export_package, list_exports
+          from core.embeddings import embed_text, embed_query, EMBEDDING_DIM
           from agents.configs import AGENTS, list_agent_types
           from agents.spawner import list_outputs
           from experiments.judge import phase1_mechanical
           print('All core imports OK')
           print(f'Agent types: {list_agent_types()}')
+          print(f'Embedding dim: {EMBEDDING_DIM}')
           print(f'Dispatcher trigger rules: {list(Dispatcher().status()[\"trigger_rules\"].keys())}')
           "
 

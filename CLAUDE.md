@@ -16,6 +16,7 @@ A **FastAPI dashboard** (port 8750) that:
 - Vector store with rich metadata (auto-tags: agent_type, role, observations O0-O8, 17 properties, concepts, files touched)
 - Metadata extractor (auto-extracts structured tags from agent output text on every run)
 - Filtered search API (search by agent_type, role, concept, observation, property, text)
+- Semantic search with TF-IDF embeddings (256-dim: 64 domain concepts + 64 obs/properties + 128 trigram hashes)
 - Knowledge summary endpoint (`/knowledge` — aggregate tag counts, what the platform knows)
 - Event dispatcher (event → agent routing with trigger rules and cooldown system)
 - Export tool (build portable review packages from workspace + RAG by framing query)
@@ -23,10 +24,9 @@ A **FastAPI dashboard** (port 8750) that:
 - Hook installer (batch install/uninstall across connected repos)
 - Health checks (cross-repo validation, import checking, workspace code execution)
 - Infrastructure automation (auto-index, spool drain, mechanical judge — all on server startup)
-- 13 MCP tools for agent self-service (status, judge, search, knowledge, spawn, export, etc.)
+- 14 MCP tools for agent self-service (status, judge, search, semantic search, knowledge, spawn, export, etc.)
 
 **Not implemented** (don't pretend these exist):
-- Embedding generation for vector store (tag-filtered text search works, cosine similarity pending embeddings)
 - Agent-to-agent direct communication channel
 
 ## Agent-Human Precedence
@@ -188,6 +188,7 @@ POST /judge               — run experiment judge {"run_dir": "workspace", "ski
 GET  /verdicts            — list all verdict.json files with scores
 POST /index-outputs       — index agent outputs into vector store
 GET  /search-outputs?q=   — text search across agent outputs
+GET  /semantic-search?q=  — cosine similarity search using TF-IDF embeddings
 GET  /knowledge           — aggregate tag counts (concepts, observations, properties)
 GET  /dispatcher          — event dispatcher status, trigger rules, cooldowns
 POST /export              — build export package {"framing": "spectral gap derivation"}
@@ -217,6 +218,7 @@ python experiments/judge.py workspace/ --skip-llm   # mechanical only (fast)
 | `agentic_judge` | Run experiment judge against a directory |
 | `agentic_health` | Deep health check (repos, imports, workspace) |
 | `agentic_search` | Search outputs by text + metadata (agent_type, role, concept, observation, property) |
+| `agentic_semantic_search` | Cosine similarity search using TF-IDF embeddings — finds related content even with different wording |
 | `agentic_knowledge` | Tag summary — what concepts, observations, properties the platform has indexed |
 | `agentic_export` | Build a portable export package from internal knowledge, driven by a framing query |
 | `agentic_list_exports` | List all existing export packages |
@@ -230,6 +232,7 @@ Agentic/
 │   ├── state.py         — thread-safe agent record tracking, persistence
 │   ├── vector_store.py  — numpy-backed vector store, filtered search by tags, auto-indexing
 │   ├── metadata.py      — auto-extracts tags from agent outputs (observations, properties, concepts, files)
+│   ├── embeddings.py    — TF-IDF embeddings (256-dim) for semantic search, no external APIs
 │   ├── event_queue.py   — event emission, queuing, persistence
 │   ├── dispatcher.py    — event → agent routing (trigger rules, cooldowns, spool consumption)
 │   └── export.py        — build portable review packages (search, gather, synthesize)

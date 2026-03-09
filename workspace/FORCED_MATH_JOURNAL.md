@@ -85,3 +85,201 @@ If you DEMAND that the spectral gap equals the non-boundary fraction, you get p_
 **Next:** Build the distinction calculator (Open Question #2). Given N distinctions, what structure is forced? Make it composable.
 
 ---
+
+### 2026-03-09 T+00:15 – T+00:30 | Distinction Engine — Calculator for forced structures
+
+**Task:** Open Question #2 — build a composable tool: input = N distinctions, output = forced structure.
+
+**Built:** `algebra/distinction_engine.py` — a full calculator with classes `Distinction` and `DistinctionSystem`.
+
+**What the tool does:**
+```python
+from distinction_engine import DistinctionSystem
+sys = DistinctionSystem(n=4, names=['x','y','z','w'])
+result = sys.compute_all()  # returns dict with everything
+```
+
+Computes: state enumeration, boundary depth distribution, graph Laplacian spectrum, Z₃^n rotation spectrum, non-boundary fraction, adjacency structure.
+
+**Results — the distinction chain (1 to 6 distinctions):**
+
+| n | states | live | fraction  | Lap gap | group |
+|---|--------|------|-----------|---------|-------|
+| 1 |      3 |    2 | 0.666667  | 3.0000  | Z₃   |
+| 2 |      9 |    4 | 0.444444  | 3.0000  | Z₃²  |
+| 3 |     27 |    8 | 0.296296  | 3.0000  | Z₃³  |
+| 4 |     81 |   16 | 0.197531  | 3.0000  | Z₃⁴  |
+| 5 |    243 |   32 | 0.131687  | 3.0000  | Z₃⁵  |
+| 6 |    729 |   64 | 0.087791  | 3.0000  | Z₃⁶  |
+
+**SURPRISE FINDING: Laplacian gap is ALWAYS exactly 3.**
+
+The graph Laplacian gap (smallest nonzero eigenvalue) is 3.0000 for every n. This is a TOPOLOGICAL invariant of the Z₃^n state graph — it doesn't depend on any operator choice or transition probabilities. It's a genuine forced constant.
+
+Why 3? Because each Z₃ factor contributes a Laplacian gap of 3 (the complete graph K₃ has Laplacian eigenvalues {0, 3, 3}), and the product graph's Laplacian gap is the minimum of the factor gaps — which stays 3.
+
+This is arguably more fundamental than the "spectral gap 2/3" claimed in the existing proof, because it requires NO dynamical assumptions.
+
+**Also found: the (k-1)/k formula is universal.**
+- k=2 (no boundary weight): fraction = (1/2)^n — too fast, 1 live state per distinction
+- k=3 (O1+O3 forced): fraction = (2/3)^n — the forced case
+- k=4: fraction = (3/4)^n — slower decay
+- O3 (boundary has weight) is what forces k=3 instead of k=2. Without O3, everything is binary.
+
+**Boundary depth distribution follows Pascal's triangle:**
+- n=3: depths [8, 12, 6, 1] = C(3,0)·2³, C(3,1)·2², C(3,2)·2¹, C(3,3)·2⁰
+- General: depth d has C(n,d)·2^(n-d) states
+
+**Honest assessment:**
+- The counting/combinatorial properties ARE genuinely forced ✓
+- The Laplacian gap = 3 IS forced (graph theory, no choices) ✓
+- The live fraction = (2/3)^n IS forced (combinatorics) ✓
+- The Z₃^n rotation only has 3 distinct eigenvalues (cube roots of unity) — forced ✓
+- But transition dynamics are still a choice (per cycle 1 audit) ✗
+
+**Next:** Priority area #3 — iterative distinction chains. What happens when applying O1→O2→O3 recursively? Does the structure converge, diverge, or fractal?
+
+---
+
+### 2026-03-09 T+00:30 – T+00:45 | Conservation Law Computer — Do CL1-CL3 actually hold?
+
+**Task:** Open Question #5 — are conservation laws computationally checkable, or just stated?
+
+**Built:** `algebra/conservation_computer.py` — tests CL1-CL3 against 5 different operators with 6 initial states each. Includes `conservation_calculator()` function that tracks entropy, charge, probability through N steps.
+
+**FINDINGS — each conservation law audited:**
+
+**CL1 (Information conservation under invertible transforms):**
+- STATUS: **TRIVIALLY TRUE but MISLEADING**
+- The absorbing matrix IS invertible (det = -1/9), so CL1 technically applies
+- But "invertible" ≠ "entropy-preserving"! Entropy changes dramatically:
+  - pure_T → ΔH = +0.918 (entropy increases, information spreads)
+  - uniform → ΔH = -0.599 (entropy decreases, boundary concentrates)
+- CL1 only says "no info is DESTROYED" (you can invert to recover)
+- It does NOT say "entropy is constant" — those are different claims
+- The existing conservation_algebra.py conflates these
+
+**CL2 (Noether: symmetry → conservation):**
+- STATUS: **CORRECT but LESS USEFUL THAN CLAIMED**
+- The absorbing matrix does NOT commute with Z₃ rotation (commutator norm = 1.83)
+- Therefore Z₃ charge is NOT conserved under the absorbing dynamics
+- The Z₃ rotation trivially commutes with itself → charge conserved, but that's trivial
+- Noether's theorem is always valid; the question is which symmetries actually exist
+- The absorbing dynamics BREAKS Z₃ symmetry
+
+**CL3 (Charge conservation in closed systems):**
+- STATUS: **FAILS for absorbing dynamics**
+- Charge (q = p_T - p_C) decays to 0 over time for all non-symmetric initial states
+- Only charge-neutral states (q₀=0) stay neutral — but that's trivial
+- The "closed system" qualifier does all the work — the boundary is a sink, making the system open
+
+**Conservation calculator demo — 10-step trajectory:**
+Starting from [0.6, 0.3, 0.1]:
+- Boundary fraction: 0.10 → 0.70 → 0.90 → 0.97 → 0.99 → 1.00
+- Charge: +0.30 → -0.10 → +0.03 → -0.01 → 0.00
+- Entropy: 1.30 → 1.16 → 0.56 → 0.24 → 0.10 → 0.04 → 0.00
+- **Only probability is conserved** (always sums to 1.0000)
+
+**THE REAL CONSERVATION LAW:**
+The only quantity genuinely conserved under ALL operators tested: **total probability** (column-stochastic matrices preserve it). Everything else (entropy, charge, information content) depends on which operator you use.
+
+**Tool output:** `conservation_calculator(M, state, steps=20)` — tracks all quantities through time evolution. Usable with any matrix.
+
+**Next:** Priority #7 — Operator zoo. Catalog ALL natural operators from the seed, compute their spectra, check which commute, find the group they generate.
+
+---
+
+### 2026-03-09 T+00:45 – T+01:00 | Operator Zoo — All natural operators cataloged
+
+**Task:** Priority #7 — catalog every natural operator from the seed, compute spectra, commutation relations, and generated groups.
+
+**Built:** `algebra/operator_zoo.py` — 10 operators analyzed, commutator table, group generation, and a "mixer board" for combining operators.
+
+**The Zoo (10 operators on {T, C, B}):**
+
+| Op | Name | det | Order | Forced? | Key property |
+|----|------|-----|-------|---------|--------------|
+| I | Identity | 1 | 1 | trivial | projection, involution, orthogonal, stochastic |
+| R | Z₃ rotation | 1 | 3 | O1 | orthogonal, stochastic |
+| R² | Z₃ rotation⁻¹ | 1 | 3 | O1 | orthogonal, stochastic |
+| σ_TC | T↔C swap | -1 | 2 | O1 | involution, orthogonal, stochastic |
+| σ_TB | T↔B swap | -1 | 2 | NOT forced (O3 says B special) | involution, orthogonal |
+| σ_CB | C↔B swap | -1 | 2 | NOT forced | involution, orthogonal |
+| Π_B | boundary project | 0 | — | O3 | projection (singular) |
+| Π_L | live project | 0 | — | O3 | projection (singular) |
+| Abs | full absorb | 0 | — | O3 | projection, stochastic |
+| Mix | uniform mix | 0 | — | O6? | projection, stochastic |
+
+**Group generation:**
+- {R} → Z₃ (order 3)
+- {σ_TC} → Z₂ (order 2)
+- {R, σ_TC} → **S₃ (order 6)** — the full permutation group!
+- Adding more generators doesn't grow beyond S₃
+
+**SURPRISE: The forced symmetry group is S₃, not just Z₃.**
+
+**Commutation highlights:**
+- σ_TC commutes with ALL boundary operators (Π_B, Π_L, Abs, Mix) — color is transparent to boundary
+- R does NOT commute with σ_TC (norm 2.449) — rotation and color are entangled
+- Π_B and Π_L commute (complementary projections)
+- Mix commutes with all permutations (it's the uniform distribution, invariant under S₃)
+
+**The mixer board:** M(a,b,c) = a·R + b·σ_TC + c·Π_B + (1-a-b-c)·I produces tunable dynamics. Gap ranges from 0 (pure rotation/swap) to 1 (pure absorb), continuously.
+
+**Philosophical tension:** R sends B→T, making boundary "become" a thing. Resolution: O3 makes B distinguished, not immovable.
+
+**Next:** Priority #6 — Failure cartography. Map where the framework breaks.
+
+---
+
+### 2026-03-09 T+01:00 – T+01:15 | Failure Cartography — Where the framework breaks
+
+**Task:** Priority #6 — deliberately try to derive things that shouldn't work. Map the walls.
+
+**Built:** `algebra/failure_cartography.py` — 8 tests probing the framework's limits.
+
+**WALLS HIT (6 failures):**
+
+| Test | Result | Wall |
+|------|--------|------|
+| Z₅ derivability | FAIL | Framework only produces groups of order 2^a × 3^b. Primes > 3 unreachable. |
+| Metric from distinction | FAIL | Distinction gives TOPOLOGY (what's connected), not GEOMETRY (how far). Boundary weight is a free parameter. |
+| Zero distinctions | TENSION | Math gives trivial group (fine). O0 says it's incoherent (philosophical, not mathematical). |
+| Dependent distinctions | FAIL | (2/3)^n formula BREAKS. Independent: 4/9 = 0.444. Dependent: 4/7 = 0.571. Dependencies increase live fraction. |
+| Probability | FAIL | Framework USES probability but doesn't DERIVE it. Possibilistic and quantum interpretations equally valid from O0-O8. |
+| Real numbers | FAIL | Reaches ℤ via winding numbers but can't get to ℝ. Needs division (ℚ) and completeness (ℝ), neither in observations. |
+
+**PASSES (2 successes):**
+
+| Test | Result | Finding |
+|------|--------|---------|
+| Non-abelian from single | PASS | S₃ (non-abelian) arises as symmetry group of Z₃ from O1 alone. States are abelian; symmetries are not. |
+| Circularity test | PASS (good!) | Framework is NOT circular. O0-O8 are genuine axioms — the algebra can't derive them. |
+
+**THE FRAMEWORK BOUNDARY:**
+
+```
+CAN DERIVE:                        CANNOT DERIVE:
+  ✓ {2,3}-groups (Z₃^n, S₃)         ✗ Primes > 3 (Z₅, Z₇, ...)
+  ✓ Topology (adjacency)             ✗ Geometry (distance, angles)
+  ✓ Integers ℤ (winding)             ✗ Rationals ℚ, Reals ℝ
+  ✓ Eigenvalue spectra               ✗ Probability measures
+  ✓ Combinatorial ratios             ✗ Independence of distinctions
+  ✓ Non-abelian symmetries           ✗ Its own axioms (good — not circular)
+```
+
+**Most important wall: PROBABILITY IS ASSUMED, NOT DERIVED.**
+
+This is devastating for the spectral gap proof and conservation law analysis, which both require stochastic matrices. The observations give STATES but not MEASURES. Without an additional axiom ("states have probabilities"), the entire dynamical layer collapses.
+
+**Second most important: GEOMETRY IS NOT DERIVABLE.**
+
+The framework produces topology (what connects to what) but not geometry (how far apart). The boundary weight w is a free parameter. This limits what the framework can say about physical space.
+
+**Silver lining: NOT CIRCULAR.**
+
+O0-O8 are genuine external inputs. Z₃ cannot derive O1 ("distinction creates three things") because O1 is about the ACT of distinguishing, while Z₃ is the RESULT. The result can't recover the process.
+
+**Next:** Priority #8 — Embedding experiments. Can the forced structures actually encode/decode real data?
+
+---

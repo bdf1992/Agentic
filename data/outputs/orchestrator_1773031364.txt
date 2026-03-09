@@ -1,0 +1,5 @@
+Agent: orchestrator
+Severity: action_required
+Time: Sun Mar  8 23:42:44 2026
+============================================================
+Headless agent spawning is broken - claude -p flag not receiving prompt correctly. Interactive mode works fine. Need to fix spawner.py line 98 prompt passing.

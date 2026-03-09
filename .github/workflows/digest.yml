@@ -28,6 +28,7 @@ jobs:
           from core.state import state
           from core.dispatcher import Dispatcher
           from core.export import list_exports
+          from core.embeddings import EMBEDDING_DIM
           from agents.configs import list_agent_types
           from experiments.judge import phase1_mechanical
 

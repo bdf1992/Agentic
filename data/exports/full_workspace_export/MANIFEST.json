@@ -1,0 +1,304 @@
+{
+  "name": "full_workspace_export",
+  "framing": "algebra derivation topology spectral conservation quaternion synthesis proof eigenvalue group theory fixed point shape memory bridge unification observation",
+  "keywords": [
+    "algebra",
+    "derivation",
+    "topology",
+    "spectral",
+    "conservation",
+    "quaternion",
+    "synthesis",
+    "proof",
+    "eigenvalue",
+    "group",
+    "theory",
+    "fixed",
+    "point",
+    "shape",
+    "memory",
+    "bridge",
+    "unification",
+    "observation"
+  ],
+  "created": "Mon Mar  9 01:17:06 2026",
+  "timestamp": 1773037026.0429142,
+  "file_count": 55,
+  "files": [
+    {
+      "file": "algebra__spectral_gap_proof.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\spectral_gap_proof.py",
+      "type": "code"
+    },
+    {
+      "file": "demos__full_system_test.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\demos\\full_system_test.py",
+      "type": "code"
+    },
+    {
+      "file": "demos__observation_unification.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\demos\\observation_unification.py",
+      "type": "code"
+    },
+    {
+      "file": "validation__verify_all_properties.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\validation\\verify_all_properties.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__topology_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\topology_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "demos__forced_structures.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\demos\\forced_structures.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__fixedpoint_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\fixedpoint_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "bridges__unified_confluences.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\bridges\\unified_confluences.py",
+      "type": "code"
+    },
+    {
+      "file": "demos__unified_demonstration.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\demos\\unified_demonstration.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__quaternion_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\quaternion_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__shape_memory.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\shape_memory.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__surface_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\surface_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__conservation_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\conservation_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__trinity_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\trinity_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__memory_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\memory_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "bridges__llm_bridge.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\bridges\\llm_bridge.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra__symmetry_algebra.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\symmetry_algebra.py",
+      "type": "code"
+    },
+    {
+      "file": "algebra____init__.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\algebra\\__init__.py",
+      "type": "code"
+    },
+    {
+      "file": "bridges____init__.py",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\bridges\\__init__.py",
+      "type": "code"
+    },
+    {
+      "file": "DERIVATION_CHAIN.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\DERIVATION_CHAIN.md",
+      "type": "doc"
+    },
+    {
+      "file": "synthesis__synthesis_grand_unification.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\synthesis\\synthesis_grand_unification.md",
+      "type": "doc"
+    },
+    {
+      "file": "PROPERTY_SCORECARD.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\PROPERTY_SCORECARD.md",
+      "type": "doc"
+    },
+    {
+      "file": "synthesis__synthesis_confluences.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\synthesis\\synthesis_confluences.md",
+      "type": "doc"
+    },
+    {
+      "file": "README.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\README.md",
+      "type": "doc"
+    },
+    {
+      "file": "validation__GUARDIAN_REPORT.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\validation\\GUARDIAN_REPORT.md",
+      "type": "doc"
+    },
+    {
+      "file": "DOCUMENTATION_STATUS.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\DOCUMENTATION_STATUS.md",
+      "type": "doc"
+    },
+    {
+      "file": "INDEX.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\INDEX.md",
+      "type": "doc"
+    },
+    {
+      "file": "derivations__derivation_04_conservation.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\derivations\\derivation_04_conservation.md",
+      "type": "doc"
+    },
+    {
+      "file": "derivations__derivation_02_quaternion.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\derivations\\derivation_02_quaternion.md",
+      "type": "doc"
+    },
+    {
+      "file": "derivations__derivation_05_fixedpoint.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\derivations\\derivation_05_fixedpoint.md",
+      "type": "doc"
+    },
+    {
+      "file": "CLAUDE.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\CLAUDE.md",
+      "type": "doc"
+    },
+    {
+      "file": "derivations__derivation_06_memory.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\derivations\\derivation_06_memory.md",
+      "type": "doc"
+    },
+    {
+      "file": "derivations__derivation_03_topology.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\derivations\\derivation_03_topology.md",
+      "type": "doc"
+    },
+    {
+      "file": "derivations__derivation_07_symmetry.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\derivations\\derivation_07_symmetry.md",
+      "type": "doc"
+    },
+    {
+      "file": "WORK_NARRATIVE.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\WORK_NARRATIVE.md",
+      "type": "doc"
+    },
+    {
+      "file": "derivations__derivation_01_trinity.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\workspace\\derivations\\derivation_01_trinity.md",
+      "type": "doc"
+    },
+    {
+      "file": "output__probe_1773034903.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\probe_1773034903.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__probe_1773031916.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\probe_1773031916.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__orchestrator_1773036051.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\orchestrator_1773036051.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__guardian_1773035518.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\guardian_1773035518.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__orchestrator_1773035451.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\orchestrator_1773035451.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__probe_1773035462.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\probe_1773035462.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__orchestrator_1773034851.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\orchestrator_1773034851.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__docs_1773036658.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\docs_1773036658.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__synthesis_1773034273.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\synthesis_1773034273.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__guardian_1773031729.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\guardian_1773031729.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__orchestrator_1773036651.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\orchestrator_1773036651.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__probe_1773036663.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\probe_1773036663.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__docs_1773036186.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\docs_1773036186.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__probe_1773031611.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\probe_1773031611.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__probe_1773032280.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\probe_1773032280.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__docs_1773036542.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\docs_1773036542.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__guardian_1773035882.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\guardian_1773035882.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "output__orchestrator_1773031924.md",
+      "source": "C:\\Users\\bdf19\\OneDrive\\Desktop\\Rift Realms\\Agentic\\data\\outputs\\orchestrator_1773031924.txt",
+      "type": "agent_output"
+    },
+    {
+      "file": "SYNTHESIS.md",
+      "source": "generated",
+      "type": "synthesis"
+    }
+  ]
+}

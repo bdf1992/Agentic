@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__agentic__agentic_report",
+      "mcp__agentic__agentic_list_outputs"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "agentic"
+  ]
+}

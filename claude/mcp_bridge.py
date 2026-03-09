@@ -224,6 +224,32 @@ def handle_tool_call(tool_name: str, arguments: dict) -> str:
                 pass
         return json.dumps({"error": "Server not running — knowledge summary requires indexed outputs"})
 
+    elif tool_name == "agentic_semantic_search":
+        # Semantic similarity search using TF-IDF embeddings
+        query = arguments.get("query", "")
+        top_k = arguments.get("top_k", 10)
+        if not query:
+            return json.dumps({"error": "query is required"})
+        if HAS_REQUESTS:
+            try:
+                r = requests.get(f"{SERVER}/semantic-search",
+                                 params={"q": query, "top_k": top_k}, timeout=10)
+                return json.dumps(r.json(), indent=2)
+            except Exception:
+                pass
+        # Fallback: run embeddings locally
+        try:
+            from core.embeddings import embed_query as _eq
+            from core.vector_store import VectorStore
+            store = VectorStore("agent_outputs")
+            qvec = _eq(query)
+            matches = store.search(qvec, top_k=top_k)
+            results = [{"agent_id": doc.id, "score": round(score, 4),
+                        "context": doc.text[:300]} for doc, score in matches]
+            return json.dumps({"results": results, "query": query, "mode": "semantic"}, indent=2)
+        except Exception as e:
+            return json.dumps({"error": f"Semantic search failed: {e}"})
+
     elif tool_name == "agentic_export":
         # Build an export package from internal knowledge
         framing = arguments.get("framing", "")
@@ -383,6 +409,18 @@ TOOLS = [
         "name": "agentic_knowledge",
         "description": "What does the platform know? Returns tag counts across all indexed agent outputs — which concepts, observations, properties, and agent types are represented.",
         "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "agentic_semantic_search",
+        "description": "Semantic search across agent outputs using TF-IDF embeddings and cosine similarity. Finds conceptually similar results even with different wording. Use this when text search misses related content.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Natural language query (e.g. 'spectral gap eigenvalue derivation')"},
+                "top_k": {"type": "integer", "description": "Number of results to return (default 10)"},
+            },
+            "required": ["query"],
+        },
     },
     {
         "name": "agentic_export",

@@ -1,0 +1,10 @@
+Agent: orchestrator
+Started: Sun Mar  8 23:45:32 2026
+Finished: Sun Mar  8 23:45:34 2026
+Return code: 1
+============================================================
+
+============================================================
+STDERR:
+Error: Input must be provided either through stdin or as a prompt argument when using --print
+
