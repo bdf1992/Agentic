@@ -1,0 +1,64 @@
+{
+  "timestamp": 1773063310.186362,
+  "passed": 42,
+  "failed": 0,
+  "total_time_sec": 53.1,
+  "all_pass": true,
+  "sections": {
+    "algebra": {
+      "boundary_mediator.py": true,
+      "category_distinction.py": true,
+      "conservation_algebra.py": true,
+      "conservation_computer.py": true,
+      "conservation_from_distinction.py": true,
+      "counting_emergence.py": true,
+      "distinction_engine.py": true,
+      "failure_cartography.py": true,
+      "fixedpoint_algebra.py": true,
+      "fractal_fixedpoint.py": true,
+      "measurement_collapse.py": true,
+      "memory_algebra.py": true,
+      "operator_zoo.py": true,
+      "quadratic_residue_probe.py": true,
+      "quaternion_algebra.py": true,
+      "quaternion_spectral.py": true,
+      "sensory_manifold.py": true,
+      "shape_memory.py": true,
+      "spectral_gap_audit.py": true,
+      "spectral_gap_proof.py": true,
+      "surface_algebra.py": true,
+      "symmetry_algebra.py": true,
+      "thermodynamics_algebra.py": true,
+      "topology_algebra.py": true,
+      "trinity_algebra.py": true,
+      "unary_fixedpoint_bridge.py": true
+    },
+    "demos": {
+      "audio_renderer.py": true,
+      "automaton_renderer.py": true,
+      "coherence_proof.py": true,
+      "deformation_renderer.py": true,
+      "embedding_renderer.py": true,
+      "forced_structures.py": true,
+      "fractal_renderer.py": true,
+      "full_system_test.py": true,
+      "observation_unification.py": true,
+      "ouroboros_renderer.py": true,
+      "ultimate_confluence.py": true,
+      "unified_demonstration.py": true,
+      "webgl_renderer.py": true
+    },
+    "bridges": {
+      "llm_bridge.py": true,
+      "unified_confluences.py": true
+    },
+    "coherence": true,
+    "property_verification": true,
+    "judge": {
+      "py_files": 47,
+      "all_run": false,
+      "eigenvalues": true,
+      "smuggled": 0
+    }
+  }
+}

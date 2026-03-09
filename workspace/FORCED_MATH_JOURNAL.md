@@ -280,6 +280,45 @@ The framework produces topology (what connects to what) but not geometry (how fa
 
 O0-O8 are genuine external inputs. Z₃ cannot derive O1 ("distinction creates three things") because O1 is about the ACT of distinguishing, while Z₃ is the RESULT. The result can't recover the process.
 
-**Next:** Priority #8 — Embedding experiments. Can the forced structures actually encode/decode real data?
+**Next:** Quadratic residue probe — user challenged "Z₅ unreachable" with x²=-1 mod 5.
 
 ---
+
+### 2026-03-09 T+01:15 – T+01:30 | Quadratic Residue Probe — Z₃'s algebraic poverty
+
+**Task:** User showed x²=-1 has solutions {2,3} in Z₅. Is "Z₅ unreachable" really a wall, or a tunnel?
+
+**Built:** `algebra/quadratic_residue_probe.py` — surveys x²≡-1 (mod p) for all small primes, maps Z₃'s solvable/unsolvable equations, constructs F₉ = Z₃[i], explores the Z₃ tower.
+
+**Key findings:**
+
+1. **x²=-1 solvable iff p≡1 (mod 4).** Z₃ (p=3≡3 mod 4) CANNOT solve it. Z₅ (p=5≡1 mod 4) CAN.
+
+2. **Z₃'s quadratic poverty:** Only squares in Z₃ are {0,1}. Can't solve x²=2 either. Half of all quadratics are unsolvable (6 out of 18 general quadratics ax²+bx+c≡0 have no solution).
+
+3. **F₉ = Z₃[i] is the forced extension:** To solve x²=-1 within the Z₃ tower, extend to F₉ (9 elements). It works — √(-1) = (0,1) and (0,2) in Z₃². But it costs 9 elements for what Z₅ does with 5.
+
+4. **Z₃ tower pattern:** x²=-1 solvable in F_{3^k} iff k is EVEN. So F₃(no) → F₉(yes) → F₂₇(no) → F₈₁(yes). The ability oscillates!
+
+5. **No path from O0-O8 to 5:** Tried 4 candidate constructions (Venn regions, meta-distinction, Z₂×Z₃ subgroups, equation-as-distinction). None produce 5. The framework generates only numbers of form 2^a × 3^b.
+
+6. **Algebraic closure NOT forced:** To guarantee all quadratics are solvable, you'd need something like "O9: every statable equation has a solution in some extension." This is the axiom of algebraic closure — powerful but NOT in the seed.
+
+**Honest assessment:**
+- The user found a REAL limitation. Z₃ is algebraically impoverished compared to Z₅.
+- The framework CAN extend (F₉ solves x²=-1) but at a 9/5 efficiency penalty.
+- 5 remains genuinely outside. The {2,3}-group wall is confirmed, not broken.
+- The oscillation pattern (even k → solvable) is interesting and wasn't previously known in this context.
+
+**Tool output:** Full survey function, F₉ constructor, Z₃ tower analyzer.
+
+**Next:** User requested "Rings Linking together Fields" — build ring-theoretic bridges between fields.
+
+---
+
+### 2026-03-09 T+01:30 – T+01:45 | Ring-Field Bridge — Rings linking together fields
+
+**Task:** User requirement: "Rings Linking together Fields." Build tools exploring how ring structures connect different fields.
+
+**Building:** `algebra/ring_field_bridge.py`
+

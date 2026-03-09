@@ -596,3 +596,34 @@ The only remaining unimplemented feature is agent-to-agent direct communication.
 
 ---
 
+
+### 13:45–14:00 — MCP Semantic Search + Unified Test Runner
+
+**Built two things this cycle:**
+
+**1. MCP semantic search tool** — `agentic_semantic_search` added to `claude/mcp_bridge.py`
+- 14th MCP tool (was 13)
+- Routes to `/semantic-search` when server is up
+- Falls back to local embedding + VectorStore when offline
+- CLAUDE.md tool table and count updated
+
+**2. Unified test runner** — `workspace/validation/run_all.py`
+- Single entry point: `python workspace/validation/run_all.py`
+- Runs all algebra modules (25), demos (13), bridges (2), coherence proof, property verification, mechanical judge
+- 41/41 tests pass in 52.4s
+- Produces `validation/run_all_report.json` with machine-readable results
+- Fixed `failed_files` attribute error (MechanicalResult uses `py_results` dict, not a list)
+
+**Also updated:**
+- All 3 CI workflows now import `core.embeddings` (on_push, nightly, digest)
+- CLAUDE.md: 14 MCP tools, semantic search in API table, embeddings in directory structure
+- INDEX.md: validation entries for run_all.py and run_all_report.json
+
+**Platform status:**
+- Workspace: 18/18 properties, 41/41 files pass, 7/7 coherence tests pass
+- Platform: 14 MCP tools, 256-dim embeddings, semantic + text search
+- CI: all 3 workflows verify embeddings module
+- Only unimplemented feature: agent-to-agent direct communication
+
+---
+

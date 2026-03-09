@@ -69,7 +69,9 @@ workspace/
 │
 ├── validation/       ← Test suites and health reports
 │   ├── verify_all_properties.py   17-property verification
+│   ├── run_all.py                 Unified test runner (all modules + judge)
 │   ├── coherence_verdict.json     Master coherence proof results
+│   ├── run_all_report.json        Latest run_all results
 │   └── GUARDIAN_REPORT.md         Latest guardian findings
 │
 ├── CLAUDE.md         ← Agent build rules (DO NOT MOVE)
