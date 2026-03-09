@@ -161,7 +161,7 @@ The judge (`experiments/judge.py`) evaluates against the 17 properties post-hoc.
 | Directory | Purpose |
 |-----------|---------|
 | `core/` | Persistent Python service (FastAPI, vector store, event queue, state) |
-| `agents/` | Agent type definitions (base, probe, guardian, synthesis, maintenance) |
+| `agents/` | Agent type definitions (base, probe, guardian, synthesis, maintenance, docs, infra) |
 | `hooks/` | Git hook emitters and installable templates for connected repos |
 | `claude/` | Claude Code integration (skills, memory, MCP bridge) |
 | `browser/` | Dashboard UI and agent browser automation |
@@ -171,20 +171,67 @@ The judge (`experiments/judge.py`) evaluates against the 17 properties post-hoc.
 ## Commands
 
 ```bash
-# Start the platform
+# Start the platform (server + dispatcher + dashboard)
 python core/server.py
 
-# Check platform status
+# Check platform status (no server needed)
 python core/server.py --status
 
-# Spawn an agent manually
-python -m agents.probe --seed experiments/seeds/cartography_v1.json
+# Run the docs agent loop (updates README every 30 min)
+python agents/run_docs_loop.py
+
+# Run the infra agent (one-shot health check)
+python -c "from agents.infra_agent import InfraAgent; InfraAgent().execute()"
 
 # Install hooks in a connected repo
 python hooks/install.py /path/to/repo
 
 # Run the judge on an experiment
 python experiments/judge.py runs/<run_id>
+```
+
+## Slash Commands (Claude Code Session)
+
+Use these inside a Claude Code session when working in this repo.
+They are the Agentic equivalent of system3's Atlas commands.
+
+| Command | What it does |
+|---------|-------------|
+| `/status` | Platform health — agents discovered, queue depth, data size, hook status |
+| `/infra` | Run the infrastructure agent — check if the platform can handle what it's producing |
+| `/docs` | Run the docs agent — update README with current state |
+| `/dispatch <event_type> <repo>` | Manually emit an event and let the dispatcher route it |
+| `/experiment <seed_file>` | Start a new experiment run from a seed packet |
+| `/judge <run_id>` | Score an experiment run against the 17 properties |
+| `/digest` | Human-readable summary of recent agent activity |
+| `/save "message"` | Commit current state with a descriptive message |
+
+### How to invoke these
+
+These aren't magic — they map to Python calls. When Claude sees `/status` in this repo,
+it should run:
+
+```python
+# /status
+from agents.infra_agent import InfraAgent
+finding = InfraAgent().execute()
+# Report finding.summary and finding.data["stats"]
+
+# /docs
+from agents.docs_agent import DocsAgent
+finding = DocsAgent().execute()
+
+# /infra (same as /status but more detailed)
+from agents.infra_agent import InfraAgent
+finding = InfraAgent().execute()
+# Report full finding.data including issues and warnings
+
+# /digest
+from core.state import state
+s = state()
+print(s.digest())
+for r in s.recent(10):
+    print(f"  {r.agent_type}: {r.status} — {r.finding}")
 ```
 
 ## Code Patterns

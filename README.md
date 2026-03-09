@@ -44,6 +44,7 @@ python hooks/install.py /path/to/your/repo
 | **Synthesis** | Finds patterns across repos, flags stale connections | `experiment_completed`, `timer_daily` |
 | **Maintenance** | Cleans up — dead code, dependency drift, stale indexes | `timer_nightly`, `maintenance_requested` |
 | **Documentation** | Keeps README, indexes, and narrative framing current | `timer_30min`, `file_changed` |
+| **Infrastructure** | Prevents the platform from outgrowing itself — checks scale, hooks, imports, capacity, doc accuracy | `timer_30min`, `infra_requested` |
 
 ## Test Tiering
 
@@ -118,8 +119,8 @@ See [CLAUDE.md](CLAUDE.md) for the full precedence hierarchy.
 
 | Repo | Role | Hook Status |
 |------|------|-------------|
-| `system3` | Math foundation and research | Installed |
-| `RiftEngine` | Unity game engine | Available (not hooked) |
+| `system3` | Math foundation, axiom algebra, research | Installed |
+| `RiftEngine` | Unity braid-memory engine | Available (not hooked) |
 | `FieldForge` | Constraint system | Not found |
 | `InvertedSand` | Renderer | Not found |
 
@@ -151,5 +152,5 @@ agentic/
 *This README is maintained by the documentation agent, which runs every 30 minutes to keep it current with the state of the platform.*
 
 <!-- AGENT_STATUS_BEGIN -->
-**Last updated**: 2026-03-08 22:27 | **Agents**: docs, guardian, maintenance, probe, synthesis | **Experiments**: 1 run(s) (cartography_001) | **Commits**: 3 | **Files**: 29
+**Last updated**: 2026-03-08 22:35 | **Agents**: docs, guardian, maintenance, probe, synthesis | **Experiments**: 1 run(s) (cartography_001) | **Commits**: 6 | **Files**: 33
 <!-- AGENT_STATUS_END -->
