@@ -1,0 +1,34 @@
+name: Maintenance — Nightly
+
+on:
+  schedule:
+    - cron: "0 6 * * *"  # 6am UTC daily
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  maintenance:
+    name: Nightly Maintenance Sweep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Run maintenance agent
+        run: |
+          python -c "
+          from agents.maintenance_agent import MaintenanceAgent
+          agent = MaintenanceAgent()
+          finding = agent.execute()
+          print(f'Severity: {finding.severity}')
+          print(f'Summary: {finding.summary}')
+          "
+
+      - name: Platform health check
+        run: python -c "from core.state import state; print('State OK:', state().digest())"

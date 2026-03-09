@@ -1,0 +1,43 @@
+name: Digest — Morning Report
+
+on:
+  schedule:
+    - cron: "0 12 * * *"  # Noon UTC (7am EST)
+  workflow_dispatch:
+
+jobs:
+  digest:
+    name: Generate Morning Digest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Generate digest
+        run: |
+          python -c "
+          from core.state import state
+          s = state()
+          d = s.digest()
+          print('=== AGENTIC MORNING DIGEST ===')
+          print(f'Active agents: {d[\"active\"]}')
+          print(f'Pending review: {d[\"pending_review\"]}')
+          print(f'Completed (24h): {d[\"completed_today\"]}')
+          print(f'Failed (24h): {d[\"failed_today\"]}')
+          pending = s.pending_review()
+          if pending:
+              print()
+              print('--- NEEDS YOUR DECISION ---')
+              for r in pending:
+                  print(f'  [{r.severity}] {r.finding}')
+          else:
+              print()
+              print('Nothing pending. All clear.')
+          "

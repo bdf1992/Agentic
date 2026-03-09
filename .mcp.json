@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "agentic": {
+      "command": "python",
+      "args": ["claude/mcp_bridge.py"],
+      "description": "Agentic Platform — status, spawn, digest, decide"
+    }
+  }
+}

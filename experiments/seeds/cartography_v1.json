@@ -1,0 +1,115 @@
+{
+  "name": "Agentic Cartography — Seed v1",
+  "version": 1,
+  "description": "Observations about distinction, not theorems. The loop must derive its own map.",
+
+  "observations": [
+    {
+      "id": "O1",
+      "statement": "Defining one thing creates three: the thing, its complement, and the distinction itself.",
+      "type": "ontological"
+    },
+    {
+      "id": "O2",
+      "statement": "Binary distinction creates four states: neither, A, B, both.",
+      "type": "ontological"
+    },
+    {
+      "id": "O3",
+      "statement": "The boundary between things is itself a thing — separation has ontological weight.",
+      "type": "ontological"
+    },
+    {
+      "id": "O4",
+      "statement": "A circle has two sides but one boundary.",
+      "type": "topological"
+    },
+    {
+      "id": "O5",
+      "statement": "Counting requires memory — you cannot count without a state that persists between counts.",
+      "type": "computational"
+    },
+    {
+      "id": "O6",
+      "statement": "Symmetry is cheaper than asymmetry — symmetric structures need less information to specify.",
+      "type": "information_theoretic"
+    },
+    {
+      "id": "O7",
+      "statement": "A knot that looks trivial locally can be non-trivial globally.",
+      "type": "topological"
+    },
+    {
+      "id": "O8",
+      "statement": "Any self-referential system must contain a fixed point.",
+      "type": "logical"
+    }
+  ],
+
+  "conservation_laws": [
+    {
+      "id": "CL1",
+      "statement": "Information is conserved under invertible transformation.",
+      "algebraic_form": "det(T) != 0 implies no information loss"
+    },
+    {
+      "id": "CL2",
+      "statement": "Symmetry implies a conserved quantity (Noether).",
+      "algebraic_form": "continuous_symmetry -> conservation_law"
+    },
+    {
+      "id": "CL3",
+      "statement": "Total charge of a closed system is invariant.",
+      "algebraic_form": "sum(charges) = const over time"
+    }
+  ],
+
+  "observables": [
+    {
+      "id": "OB1",
+      "name": "multiplicity",
+      "description": "How many distinct states arise from a single distinction",
+      "measurable": true
+    },
+    {
+      "id": "OB2",
+      "name": "spectral_gap",
+      "description": "Difference between largest and second-largest eigenvalue of any transition operator",
+      "measurable": true
+    },
+    {
+      "id": "OB3",
+      "name": "self_reference_depth",
+      "description": "How many times a structure can encode information about itself before saturation",
+      "measurable": true
+    },
+    {
+      "id": "OB4",
+      "name": "boundary_dimension",
+      "description": "Dimension of the boundary relative to the bulk",
+      "measurable": true
+    }
+  ],
+
+  "constraints": {
+    "what_the_loop_must_find": "A structure satisfying all 17 properties listed in CLAUDE.md",
+    "what_it_cannot_use": [
+      "Any specific constants (3, 7, 8, 13, 28)",
+      "Any named structures (PPT, Berggren, Clifford, Hamming, MetaByte)",
+      "Any architecture from system3",
+      "The function f(n) = 2n + 1 or the seed n0 = 2"
+    ],
+    "what_it_can_reference": [
+      "The observations above",
+      "Standard mathematics (group theory, topology, spectral theory, category theory)",
+      "The concept that 'some structures are forced, not chosen'",
+      "Published theorems and known results"
+    ]
+  },
+
+  "success_criteria": {
+    "minimum": "The loop finds a self-consistent algebraic structure with at least 5 of the 17 properties",
+    "target": "The loop finds a structure that maps recognizably onto known forced mathematics",
+    "stretch": "The loop discovers something we recognize but did not hand it"
+  }
+}

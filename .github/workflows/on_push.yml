@@ -1,0 +1,28 @@
+name: Guardian — On Push
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  golden-runs:
+    name: Run Golden Runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run platform tests
+        run: pytest tests/ -v
+
+      - name: Verify core imports
+        run: python -c "from core.server import app; from agents.base import Agent; print('OK')"
