@@ -1,156 +1,116 @@
 # Agentic
 
-> A nervous system for research and development — not a tool, an operator.
+> 72-hour build sprint: agents derive a mathematical system from observations alone.
 
-Agentic is a persistent, event-driven platform that manages, guards, and orchestrates work across the Rift Realms project ecosystem. It bridges Claude Code (the hands) with a standalone Python service (the heartbeat), creating a dual OS where agents autonomously maintain, test, and explore while a human architect steers.
+## What This Is
 
----
+A platform that spawns and manages **Claude Code CLI sessions** as specialized agents.
+Each agent is a real Claude Code instance (Opus, via Claude Max subscription) with a
+system prompt, tool access, and working directory.
 
-## Architecture
-
-```
-Claude Code (micro-backend)          Agentic Service (heartbeat)
-├── Skills, memory, slash commands   ├── FastAPI server (port 8750)
-├── Git hooks → emit file events     ├── Vector store (persistent memory)
-├── Agent browser → interact w/ UI   ├── Event queue (hook consumer)
-├── CLI → spawn/manage agents        ├── Agent loop (spawn, monitor, digest)
-│                                    └── State manager (tracks everything)
-└────────── API + file bridge ───────┘
-```
+The mission: **given only 9 seed observations about distinction, build a working
+mathematical system that satisfies 17 required properties.** No constants are given —
+everything must be derived. No code is provided — everything must be written.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
 pip install fastapi uvicorn requests numpy
 
 # Start the platform
-python core/server.py
+python -m core.server
 # → Dashboard at http://localhost:8750
 
-# Check status (no server needed)
-python core/server.py --status
-
-# Install hooks in a connected repo
-python hooks/install.py /path/to/your/repo
+# Schedule the orchestrator (every 10 min)
+curl -X POST http://localhost:8750/schedule \
+  -H "Content-Type: application/json" \
+  -d '{"agent_type": "orchestrator", "interval_min": 10}'
 ```
 
-## Agent Types
+## Agent Roles
 
-| Agent | Role | Triggers |
-|-------|------|----------|
-| **Guardian** | Runs tests after changes, reports failures by severity tier | `file_changed`, `commit` |
-| **Probe** | Runs experiments, interprets results against hypotheses | `experiment_requested` |
-| **Synthesis** | Finds patterns across repos, flags stale connections | `experiment_completed`, `timer_daily` |
-| **Maintenance** | Cleans up — dead code, dependency drift, stale indexes | `timer_nightly`, `maintenance_requested` |
-| **Documentation** | Keeps README, indexes, and narrative framing current | `timer_30min`, `file_changed` |
-| **Infrastructure** | Prevents the platform from outgrowing itself — checks scale, hooks, imports, capacity, doc accuracy | `timer_30min`, `infra_requested` |
+### Builders
+| Agent | Job |
+|-------|-----|
+| **Probe** | Primary builder — derives algebra from seed observations, writes code |
+| **Synthesis** | Finds connections across derivations, unifies structures |
+| **Docs** | Documents the emerging system: derivation chain, property scorecard |
 
-## Test Tiering
+### Operators
+| Agent | Job |
+|-------|-----|
+| **Guardian** | Validates work against 17 properties, fixes bugs and gaps |
+| **Infra** | Keeps workspace buildable — imports, test harness, shared utilities |
+| **Maintenance** | Cleans duplicates, resolves inconsistencies across files |
+| **GitHub** | Commits progress, tracks property count over time |
 
-Not all tests are equal. The guardian classifies failures by what actually broke:
+### Coordinator
+| Agent | Job |
+|-------|-----|
+| **Orchestrator** | Decides which agent to run next. Bias: BUILD > VALIDATE > CONNECT > CLEAN |
 
-| Tier | What it means | Dashboard severity |
-|------|--------------|-------------------|
-| **Gold** | Something structural broke — a roundtrip fails, a simulation diverges, a multi-step process doesn't converge | `action_required` |
-| **Silver** | A derived computation changed — a formula that should produce a known value doesn't | `warning` |
-| **Bronze** | A constant doesn't equal itself — catches typos, not real breaks | `info` |
+## The Rules
 
-New or unclassified tests default to Gold. Better to over-alert than miss a real break.
+Agents get:
+- **9 seed observations** (`experiments/seeds/cartography_v1.json`)
+- **17 required properties** (listed in `CLAUDE.md`)
+- Standard mathematics (group theory, topology, spectral theory)
 
-## The Experiment: Agentic Cartography
+Agents cannot use:
+- Constants (3, 7, 8, 13, 28) unless derived
+- Named structures (PPT, Berggren, MetaByte, Hamming)
+- Code or architecture from system3
+- The function f(n) = 2n + 1 or n₀ = 2
 
-The platform's first experiment asks: **can an agentic loop, given only observations about distinction (not our specific map), derive a self-consistent algebraic structure?**
+## The Judge
 
-### Seed Observations (no constants, no named structures)
-- A unary logical position is incoherent — to say "I am" already presupposes "I am not" and the act of choosing between them. Identity requires difference. Claiming to be one thing with no outside is more radical than seeing a bigger picture, because it pretends a distinction hasn't been made when it has.
-- Defining one thing creates three: the thing, its complement, and the distinction itself
-- Binary distinction creates four states: neither, A, B, both
-- The boundary between things is itself a thing
-- A circle has two sides but one boundary
-- Counting requires memory
-- Symmetry is cheaper than asymmetry
-- A knot that looks trivial locally can be non-trivial globally
-- Any self-referential system must contain a fixed point
+```bash
+# Full evaluation (mechanical + LLM adversarial scoring)
+python experiments/judge.py workspace/
 
-### 17 Required Properties
-Any structure the loop discovers must be:
+# Quick check (mechanical only, no LLM)
+python experiments/judge.py workspace/ --skip-llm
 
-1. **Invariant** — forced by the math, not chosen by the designer
-2. **Spectral** — built on eigenvalues, not coordinates
-3. **Semantically mappable** — concepts attach to the algebra naturally
-4. **Self-encoding** — can represent data about itself, on itself
-5. **Time-like** — has a clock, irreversibility, sequence
-6. **Space-like** — has neighbors, adjacency, locality
-7. **Physics-like** — has conservation laws and symmetry breaking
-8. **Logic-gated** — makes discrete decisions
-9. **Self-recursive** — its own operator applies to its own output
-10. **Living** — thermodynamic, not static
-11. **Bridges discrete and continuous** — lattice embeds in continuum
-12. **LLM-compatible** — can consume and produce embeddings
-13. **Maps onto known structures** — discovers, doesn't invent
-14. **Dimensionless ratios first** — pure numbers before units
-15. **Geometrically grounded** — dimensionless quantities anchored on unit sphere
-16. **Shape memory** — deformations remember their origin
-17. **Topological-spectral** — connectivity meets eigenvalues
-
-### Results So Far
-
-| Probe | Structure Found | Properties | Checks |
-|-------|----------------|------------|--------|
-| cartography_001 | Distinction Algebra | 12/17 | ? |
-
-Probe 001 started from "defining one thing creates three" and "the boundary is a thing." From those two observations alone, it derived a 9-state algebra with three logic gates (identity, flip, reset), a spectral gap of 1/3, and an irreversible drift toward the boundary — everything decays into the distinction itself. 12 of 17 properties confirmed, 19/19 quantitative checks passed. See [derivation_001.md](experiments/runs/cartography_001/derivation_001.md) for the full reasoning chain.
-
-## Agent-Human Precedence
-
-```
-Human intent  >  CLAUDE.md rules  >  Agent judgment  >  Automation defaults
+# Via API
+curl -X POST http://localhost:8750/judge \
+  -H "Content-Type: application/json" \
+  -d '{"run_dir": "workspace"}'
 ```
 
-- **Human = Architect**: defines intent, assigns meaning, approves gates
-- **Agents = Operators**: propose findings, escalate ambiguity, stop when stuck
-- Agents may autonomously run tests, index files, and generate reports
-- Agents must ask before modifying code, closing issues, pushing, or deleting anything
-
-See [CLAUDE.md](CLAUDE.md) for the full precedence hierarchy.
-
-## Connected Repositories
-
-| Repo | Role | Hook Status |
-|------|------|-------------|
-| `system3` | Math foundation, axiom algebra, research | Installed |
-| `RiftEngine` | Unity braid-memory engine | Available (not hooked) |
-| `FieldForge` | Constraint system | Not found |
-| `InvertedSand` | Renderer | Not found |
+Phase 1 (mechanical): Does code run? Smuggled constants? Eigenvalues present?
+Phase 2 (LLM): Adversarial property scoring — prosecutor, not cheerleader.
 
 ## Directory Structure
 
 ```
-agentic/
-├── core/           # FastAPI server, event queue, state, vector store
-├── agents/         # Agent definitions (base, probe, guardian, synthesis, maintenance, docs)
-├── hooks/          # Git hook emitters + installer for connected repos
-├── claude/         # Claude Code integration (MCP tools, skills, memory)
-├── experiments/    # Experiment seeds, isolated runs, and scoring
-│   ├── seeds/      # Starting observations (no answers, just questions)
-│   └── runs/       # Each run's discoveries, isolated from each other
-├── .github/        # CI/CD (on_push, nightly, digest)
-└── data/           # Runtime state (gitignored)
+Agentic/
+├── core/server.py       — FastAPI server, dashboard, scheduler
+├── agents/
+│   ├── configs.py        — 8 agent configs (prompts, tools, permissions)
+│   └── spawner.py        — spawn_interactive() and spawn_headless()
+├── experiments/
+│   ├── seeds/            — seed observations (the starting material)
+│   ├── runs/             — completed experiment derivations
+│   └── judge.py          — 2-phase evaluation (mechanical + LLM)
+├── workspace/            — WHERE AGENTS BUILD (their codebase)
+└── data/
+    ├── outputs/          — headless agent output files
+    ├── prompts/          — generated system prompt files
+    └── launchers/        — generated PowerShell launcher scripts
 ```
 
-## CI/CD
+## API
 
-| Workflow | Schedule | Purpose |
-|----------|----------|---------|
-| `on_push` | Every push/PR | Run platform tests, verify imports |
-| `nightly` | 6am UTC daily | Maintenance agent sweep |
-| `digest` | Noon UTC daily | Morning digest generation |
-
----
-
-*This README is maintained by the documentation agent, which runs every 30 minutes to keep it current with the state of the platform.*
-
-<!-- AGENT_STATUS_BEGIN -->
-**Last updated**: 2026-03-08 22:35 | **Agents**: docs, guardian, maintenance, probe, synthesis | **Experiments**: 1 run(s) (cartography_001) | **Commits**: 6 | **Files**: 33
-<!-- AGENT_STATUS_END -->
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/` | Dashboard |
+| GET | `/status` | Platform health + active agents |
+| GET | `/agents` | List agent types |
+| POST | `/spawn` | Launch agent `{agent_type, mode, task}` |
+| GET | `/outputs` | List completed runs |
+| GET | `/output/{id}` | Read specific output |
+| POST | `/judge` | Run judge `{run_dir, skip_llm}` |
+| GET | `/verdicts` | List all verdict.json files |
+| GET | `/health` | Deep health check (repos, imports, disk, workspace) |
+| POST | `/schedule` | Set recurring schedule `{agent_type, interval_min}` |
+| GET | `/schedules` | List active schedules |

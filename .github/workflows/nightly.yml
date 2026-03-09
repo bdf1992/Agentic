@@ -20,15 +20,75 @@ jobs:
       - name: Install dependencies
         run: pip install -e .
 
-      - name: Run maintenance agent
+      - name: Platform health check
         run: |
           python -c "
-          from agents.maintenance_agent import MaintenanceAgent
-          agent = MaintenanceAgent()
-          finding = agent.execute()
-          print(f'Severity: {finding.severity}')
-          print(f'Summary: {finding.summary}')
+          from core.state import state
+          from core.metadata import extract_metadata
+          from core.dispatcher import Dispatcher
+          from core.export import list_exports
+          from agents.configs import AGENTS, list_agent_types
+          s = state()
+          d = s.digest()
+          print('=== PLATFORM STATE ===')
+          print(f'Active: {d[\"active\"]}')
+          print(f'Pending review: {d[\"pending_review\"]}')
+          print(f'Completed (24h): {d[\"completed_today\"]}')
+          print(f'Failed (24h): {d[\"failed_today\"]}')
+          print(f'Agent types: {list_agent_types()}')
+          disp = Dispatcher()
+          print(f'Dispatcher trigger rules: {len(disp.status()[\"trigger_rules\"])} event types')
+          exports = list_exports()
+          print(f'Export packages: {len(exports)}')
           "
 
-      - name: Platform health check
-        run: python -c "from core.state import state; print('State OK:', state().digest())"
+      - name: Check workspace integrity
+        run: |
+          python -c "
+          from pathlib import Path
+          import subprocess, sys
+          ws = Path('workspace')
+          if not ws.exists():
+              print('No workspace directory')
+              sys.exit(0)
+          py_files = list(ws.glob('*.py'))
+          md_files = list(ws.glob('*.md'))
+          print(f'Workspace: {len(py_files)} .py, {len(md_files)} .md files')
+          for f in py_files:
+              result = subprocess.run([sys.executable, str(f)], capture_output=True, text=True, timeout=30)
+              status = 'OK' if result.returncode == 0 else 'FAIL'
+              print(f'  {f.name}: {status}')
+          "
+
+      - name: Run mechanical judge
+        run: |
+          python -c "
+          from pathlib import Path
+          ws = Path('workspace')
+          if ws.exists():
+              from experiments.judge import judge_run
+              verdict = judge_run(str(ws), skip_llm=True)
+              print(f'Verdict: {verdict.get(\"verdict\", \"UNKNOWN\")}')
+          "
+
+      - name: Check for dead imports
+        run: |
+          python -c "
+          import ast, sys
+          from pathlib import Path
+          errors = []
+          for f in Path('.').rglob('*.py'):
+              if '__pycache__' in str(f) or '.git' in str(f):
+                  continue
+              try:
+                  ast.parse(f.read_text(encoding='utf-8', errors='replace'))
+              except SyntaxError as e:
+                  errors.append(f'{f}: {e}')
+          if errors:
+              print('SYNTAX ERRORS:')
+              for e in errors:
+                  print(f'  {e}')
+              sys.exit(1)
+          else:
+              print('All Python files parse successfully')
+          "

@@ -7,8 +7,8 @@ on:
     branches: [main, master]
 
 jobs:
-  golden-runs:
-    name: Run Golden Runs
+  validate:
+    name: Validate Platform
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,8 +21,69 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
-      - name: Run platform tests
-        run: pytest tests/ -v
-
       - name: Verify core imports
-        run: python -c "from core.server import app; from agents.base import Agent; print('OK')"
+        run: |
+          python -c "
+          from core.state import state
+          from core.vector_store import VectorStore
+          from core.metadata import extract_metadata
+          from core.dispatcher import Dispatcher
+          from core.export import export_package, list_exports
+          from agents.configs import AGENTS, list_agent_types
+          from agents.spawner import list_outputs
+          from experiments.judge import phase1_mechanical
+          print('All core imports OK')
+          print(f'Agent types: {list_agent_types()}')
+          print(f'Dispatcher trigger rules: {list(Dispatcher().status()[\"trigger_rules\"].keys())}')
+          "
+
+      - name: Run workspace code
+        run: |
+          python -c "
+          from pathlib import Path
+          import subprocess, sys
+          ws = Path('workspace')
+          if not ws.exists():
+              print('No workspace directory')
+              sys.exit(0)
+          py_files = list(ws.glob('*.py'))
+          print(f'Found {len(py_files)} Python files in workspace/')
+          failed = []
+          for f in py_files:
+              result = subprocess.run([sys.executable, str(f)], capture_output=True, text=True, timeout=30)
+              status = 'OK' if result.returncode == 0 else 'FAIL'
+              print(f'  {f.name}: {status}')
+              if result.returncode != 0:
+                  failed.append(f.name)
+          if failed:
+              print(f'FAILED: {failed}')
+              sys.exit(1)
+          print('All workspace code runs successfully')
+          "
+
+      - name: Run mechanical judge (skip LLM)
+        run: |
+          python -c "
+          from pathlib import Path
+          ws = Path('workspace')
+          if not ws.exists():
+              print('No workspace to judge')
+          else:
+              from experiments.judge import phase1_mechanical
+              result = phase1_mechanical(ws)
+              print(f'Files: {len(result.py_files)}')
+              print(f'All run: {result.all_code_runs}')
+              print(f'Eigenvalues: {result.has_eigenvalues}')
+              print(f'Smuggled: {len(result.smuggled)}')
+              if result.smuggled:
+                  for s in result.smuggled[:5]:
+                      print(f'  {s[\"file\"]}:{s[\"line\"]} — {s[\"constant\"]} ({s[\"name\"]})')
+          "
+
+      - name: Run tests
+        run: |
+          if [ -d "tests" ]; then
+            pytest tests/ -v
+          else
+            echo "No tests/ directory yet"
+          fi

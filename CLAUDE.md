@@ -1,275 +1,263 @@
 # CLAUDE.md — Agentic Platform
 
-This is the orchestration layer for the Rift Realms research and development environment.
-It is not a library. It is not an app. It is a **nervous system** — a persistent, event-driven
-platform that manages, guards, and orchestrates work across multiple repositories.
+This platform spawns and manages Claude Code CLI sessions, each configured for a specific role.
+Every agent is a real Claude Code instance running on the user's Claude Max subscription — not an API call, not a toy. Each gets a system prompt, allowed tools, working directory, and permission mode.
+
+## What This Actually Is
+
+A **FastAPI dashboard** (port 8750) that:
+- Launches Claude Code sessions (headless or interactive terminal)
+- Configures each with role-specific system prompts and tool access
+- Tracks active/completed runs and stores outputs
+- Schedules recurring agent runs via server-side scheduler
+
+**Implemented infrastructure:**
+- Experiment judge (2-phase: mechanical + LLM adversarial scoring, 17 properties)
+- Vector store with rich metadata (auto-tags: agent_type, role, observations O0-O8, 17 properties, concepts, files touched)
+- Metadata extractor (auto-extracts structured tags from agent output text on every run)
+- Filtered search API (search by agent_type, role, concept, observation, property, text)
+- Knowledge summary endpoint (`/knowledge` — aggregate tag counts, what the platform knows)
+- Event dispatcher (event → agent routing with trigger rules and cooldown system)
+- Export tool (build portable review packages from workspace + RAG by framing query)
+- CI/CD workflows (on-push validation, nightly maintenance, judge workflow, morning digest)
+- Hook installer (batch install/uninstall across connected repos)
+- Health checks (cross-repo validation, import checking, workspace code execution)
+- Infrastructure automation (auto-index, spool drain, mechanical judge — all on server startup)
+- 13 MCP tools for agent self-service (status, judge, search, knowledge, spawn, export, etc.)
+
+**Not implemented** (don't pretend these exist):
+- Embedding generation for vector store (tag-filtered text search works, cosine similarity pending embeddings)
+- Agent-to-agent direct communication channel
 
 ## Agent-Human Precedence
 
-This section defines the authority hierarchy. It is non-negotiable.
+### The Human is the Architect
 
-### 1. The Human is the Architect
+The human defines intent, meaning, direction, and approval gates.
+Agents propose, they do not decree. When ambiguous, surface both options.
 
-The human defines:
-- **Intent** — what we're trying to achieve and why
-- **Meaning** — what a result signifies (agents find patterns, humans assign significance)
-- **Direction** — which path to take when multiple exist
-- **Approval gates** — destructive actions, cross-repo changes, public-facing outputs
-
-An agent must NEVER:
-- Assign meaning to its own findings without human review
-- Change direction autonomously when results are ambiguous
-- Take irreversible actions without explicit approval
-- Claim a discovery is "significant" — present it, let the human judge
-
-### 2. Agents are Operators
-
-Agents execute within boundaries the human has set. They:
-- **Propose** actions and findings, they do not decree them
-- **Escalate** ambiguity — if a result could mean two things, surface both, don't pick
-- **Report** concisely — findings first, reasoning available on request
-- **Die gracefully** — if blocked, report why and stop. Do not retry in loops.
-
-### 3. Precedence Order
+### Precedence Order
 
 ```
 Human intent  >  CLAUDE.md rules  >  Agent judgment  >  Automation defaults
 ```
 
-If a human instruction contradicts CLAUDE.md, the human wins (they wrote it, they can override it).
-If CLAUDE.md contradicts an agent's heuristic, CLAUDE.md wins.
-If an agent is unsure, it asks. Asking is always cheaper than undoing.
+### What Agents May Do Without Asking
 
-### 4. Delegation Boundaries
-
-Agents MAY autonomously:
 - Run tests, linters, validation suites
-- Index files, update embeddings, refresh caches
-- Generate digests and status reports
-- Spawn sub-agents for read-only research
-- Flag regressions or drift
+- Read files, search code, explore repos
+- Generate reports and status summaries
+- Create new files in their designated workspace
+- Write code, build features, run experiments
 
-Agents MUST ask before:
-- Modifying code in any repository
-- Creating or closing issues/PRs
-- Pushing to any remote
-- Resolving or rejecting conjectures
-- Changing CLAUDE.md or any configuration
-- Sending messages to external services
-- Deleting anything
+### What Agents Must Ask Before Doing
 
-### 5. The Feedback Contract
+- Pushing to any remote repository
+- Deleting files or branches
+- Creating or closing GitHub issues/PRs
+- Modifying CLAUDE.md or agent configs
+- Any irreversible action
 
-Every agent action produces a result. Results flow back through:
-```
-Agent finding → Digest queue → Dashboard → Human review → Approved / Rejected / Redirected
-```
-
-No finding is "done" until the human has seen it. Agents can queue findings,
-but queued ≠ accepted. The dashboard is the single surface for human review.
-
----
+**Key shift**: agents are not just watchers. They BUILD. A guardian doesn't just report a regression — it investigates root cause and proposes a fix. A probe agent doesn't just read a seed — it writes code, runs experiments, iterates. The orchestrator doesn't just schedule health checks — it assesses what the project NEEDS and launches agents to do that work.
 
 ## Architecture
 
-### Dual OS Model
-
 ```
-Claude Code (micro-backend)          Catalyst Service (heartbeat)
-├── Skills, memory, slash commands   ├── FastAPI server (always-on)
-├── Hooks → emit file events         ├── Vector store (persistent memory)
-├── Agent browser → interact w/ UI   ├── Event queue (hook consumer)
-├── CLI → spawn/manage agents        ├── Agent loop (spawn, monitor, digest)
-│                                    └── State manager (what's alive)
-└────────── API + file bridge ───────┘
+Dashboard (http://localhost:8750)
+├── Agent grid — launch any agent headless or interactive
+├── Activity timeline — see what ran, what's running
+├── Output viewer — read completed agent results
+├── Verdict panel — experiment judge results with scores
+├── Health panel — repo status, workspace validation, disk usage
+├── Knowledge & Search — search outputs, browse indexed tags
+├── Export panel — build portable review packages by framing query
+├── Dispatcher panel — trigger rules, cooldowns, event routing status
+├── Scheduler — recurring agent runs (server-side asyncio)
+└── Status API — JSON endpoints for orchestrator decisions
+
+Spawner (agents/spawner.py)
+├── Interactive: opens Windows Terminal with configured claude session
+├── Headless: runs claude -p in background, captures output
+└── Auto-indexes output into vector store on completion
+
+Infrastructure Automation (runs on server startup, no manual intervention)
+├── Auto-index: indexes agent outputs into vector store every 2 min
+├── Spool drain: processes offline events every 5 min
+├── Mechanical judge: validates workspace code every 30 min
+├── Post-builder judge: auto-judges workspace when probe/guardian/synthesis completes
+└── Startup: indexes all existing outputs + drains spool on boot
+
+Export Tool (core/export.py)
+├── RAG-driven: searches vector store + workspace files by keyword relevance
+├── Flat output: copies code, docs, agent outputs into data/exports/<name>/
+├── Synthesis doc: auto-generates SYNTHESIS.md + MANIFEST.json
+└── Available as API (POST /export), MCP tool (agentic_export), and direct import
+
+Configs (agents/configs.py)
+└── 8 agent types, each with system_prompt, startup_message, tools, cwd, permissions
 ```
 
-Claude Code is the **hands** — it reads, writes, searches, interacts.
-The Catalyst service is the **heartbeat** — it persists, watches, dispatches.
+### How Agents Launch
 
-### Connected Repositories
+**Interactive** (opens a terminal window):
+1. System prompt + startup message written to temp file
+2. PowerShell launcher reads file, passes to `claude --system-prompt`
+3. Windows Terminal opens with configured working directory
+4. Human types "go" and agent executes startup instructions
 
-| Repo | Role | Hook |
+**Headless** (background, captured output):
+1. Combined prompt passed to `claude -p --model opus`
+2. Runs in background thread
+3. Output stored in `data/outputs/{agent_id}.txt`
+4. Dashboard shows results when complete
+
+### Connected Repository
+
+| Repo | Path | Role |
 |------|------|------|
-| `system3` | Math foundation, axiom algebra, research | post-commit → event queue |
-| `RiftEngine` | Unity braid-memory engine | post-commit → event queue |
-| `FieldForge` | Constraint system | post-commit → event queue |
-| `InvertedSand` | Renderer | post-commit → event queue |
-| `Agentic` | This platform (self-managing) | post-commit → event queue |
+| Agentic | This directory | Platform itself |
 
-### Event Flow
+## Agent Types
+
+### Builders (these CREATE things)
+
+| Agent | What It Does |
+|-------|-------------|
+| **Probe** | Runs experiments — writes code, tests hypotheses, produces artifacts |
+| **Synthesis** | Finds cross-repo patterns, writes synthesis documents, proposes connections |
+| **Docs** | Updates documentation to match code reality — edits files directly |
+
+### Operators (these MAINTAIN things)
+
+| Agent | What It Does |
+|-------|-------------|
+| **Guardian** | Runs golden tests, classifies failures, investigates root causes |
+| **Maintenance** | Finds dead code, broken imports, hardcoded constants — reports what to clean |
+| **Infrastructure** | Checks platform health — disk, imports, hooks, capacity |
+| **GitHub** | Reviews commits, flags danger patterns, tracks repo health |
+
+### Coordinator
+
+| Agent | What It Does |
+|-------|-------------|
+| **Orchestrator** | Assesses project state, decides which agents to launch, reviews results |
+
+## Orchestrator Decision Logic
+
+The orchestrator runs every 10 minutes. Its job is NOT just health monitoring. It should:
+
+1. **Assess what the project needs RIGHT NOW** — new code? tests? cleanup? experiments?
+2. **Check what recently completed** — read outputs, learn from findings
+3. **Launch the agent that moves the project forward most** — not just the safest one
+4. **Prioritize building over monitoring** — if nothing is broken, build something
+
+### Decision Framework
 
 ```
-1. Something changes (commit, file save, timer, human command)
-2. Hook emits event → Catalyst event queue
-3. Queue classifies: which agent(s) does this concern?
-4. Manager spawns appropriate agent(s)
-5. Agent runs (Claude Code CLI or internal Python)
-6. Result → digest queue
-7. Dashboard shows digest → human reviews
-8. Human approves/rejects/redirects → next cycle
+IF recent commits changed structural code → Guardian (verify nothing broke)
+IF Guardian passed and no active builders → Probe or Synthesis (advance the project)
+IF experiments completed → Synthesis (find patterns across results)
+IF docs drifted from code → Docs (fix the drift)
+IF nothing specific needed → Probe (explore, discover, create)
+FALLBACK: Infrastructure or Maintenance (health check)
 ```
 
----
-
-## The Experiment Framework
-
-This platform exists to run experiments. The first experiment is **Agentic Cartography**.
-
-### Seed Packets
-
-An experiment begins with a **seed packet** — a set of observations, not theorems.
-The seed gives the agentic loop something to chase without predetermining the answer.
-
-Seed rules:
-- Observations only, no named structures
-- No specific constants unless they're derivable from the observations
-- No architecture from system3 (the loop must find its own)
-- Mathematical forcing is the only constraint
-
-### The 17 Properties
-
-Any structure the loop discovers must satisfy:
-1. Invariant (forced, not chosen)
-2. Spectral (eigenvalue-based)
-3. Semantically mappable (concepts attach to algebra)
-4. Ouroboros (self-encoding)
-5. Time-like (clock, sequence, irreversibility)
-6. Space-like (neighborhood, adjacency)
-7. Physics-like (conservation, symmetry breaking)
-8. Logic-gated (discrete decisions)
-9. Self-recursive (operator on own output)
-10. Living state (thermodynamic)
-11. Discrete-continuous bridge
-12. LLM-integrable (embeddings in/out)
-13. Maps onto known forced structures
-14. Dimensionless ratios first
-15. Unit-sphere grounded
-16. Shape memory (deformation remembers origin)
-17. Topological spectral analysis (topology meets spectrum)
-
-### Run Isolation
-
-Each experiment run lives in `experiments/runs/<run_id>/`.
-Runs are isolated — they cannot read other runs' outputs.
-The judge (`experiments/judge.py`) evaluates against the 17 properties post-hoc.
-
----
-
-## Directory Structure
-
-| Directory | Purpose |
-|-----------|---------|
-| `core/` | Persistent Python service (FastAPI, vector store, event queue, state) |
-| `agents/` | Agent type definitions (base, probe, guardian, synthesis, maintenance, docs, infra) |
-| `hooks/` | Git hook emitters and installable templates for connected repos |
-| `claude/` | Claude Code integration (skills, memory, MCP bridge) |
-| `browser/` | Dashboard UI and agent browser automation |
-| `experiments/` | Seed packets, isolated runs, and the judge |
-| `.github/workflows/` | CI/CD automation (on_push, nightly, digest) |
+The bias is toward CREATION, not surveillance. Monitoring is what you do when everything else is done.
 
 ## Commands
 
 ```bash
-# Start the platform (server + dispatcher + dashboard)
-python core/server.py
+# Start the platform
+python -m core.server
+# → Dashboard at http://localhost:8750
 
-# Check platform status (no server needed)
-python core/server.py --status
+# API endpoints — Core
+GET  /status              — platform health + active agents
+GET  /agents              — list all agent types
+POST /spawn               — launch an agent {"agent_type": "guardian", "mode": "headless"}
+GET  /outputs             — list completed runs
+GET  /output/{agent_id}   — read a specific output
+POST /schedule            — set recurring schedule {"agent_type": "orchestrator", "interval_min": 10}
+GET  /schedules           — list active schedules
+DELETE /schedule/{type}   — remove a schedule
 
-# Run the docs agent loop (updates README every 30 min)
-python agents/run_docs_loop.py
+# API endpoints — Infrastructure
+GET  /health              — deep health check (repos, imports, workspace, disk)
+GET  /repos               — connected repos with last commit info
+POST /judge               — run experiment judge {"run_dir": "workspace", "skip_llm": false}
+GET  /verdicts            — list all verdict.json files with scores
+POST /index-outputs       — index agent outputs into vector store
+GET  /search-outputs?q=   — text search across agent outputs
+GET  /knowledge           — aggregate tag counts (concepts, observations, properties)
+GET  /dispatcher          — event dispatcher status, trigger rules, cooldowns
+POST /export              — build export package {"framing": "spectral gap derivation"}
+GET  /exports             — list existing export packages
 
-# Run the infra agent (one-shot health check)
-python -c "from agents.infra_agent import InfraAgent; InfraAgent().execute()"
+# Hook management
+python hooks/install.py              # install hooks in all connected repos
+python hooks/install.py --list       # show hook status
+python hooks/install.py --uninstall  # remove hooks from all repos
 
-# Install hooks in a connected repo
-python hooks/install.py /path/to/repo
-
-# Run the judge on an experiment
-python experiments/judge.py runs/<run_id>
+# Experiment judge
+python experiments/judge.py workspace/              # full judge (mechanical + LLM)
+python experiments/judge.py workspace/ --skip-llm   # mechanical only (fast)
 ```
 
-## Slash Commands (Claude Code Session)
+## MCP Tools (available to all agents)
 
-Use these inside a Claude Code session when working in this repo.
-They are the Agentic equivalent of system3's Atlas commands.
+| Tool | What It Does |
+|------|-------------|
+| `agentic_status` | Query platform status |
+| `agentic_digest` | Human-readable activity summary |
+| `agentic_report` | Report findings back to platform |
+| `agentic_read_output` | Read another agent's output |
+| `agentic_list_outputs` | List recent agent runs |
+| `agentic_spawn` | Spawn another agent |
+| `agentic_decide` | Approve/reject a pending finding |
+| `agentic_judge` | Run experiment judge against a directory |
+| `agentic_health` | Deep health check (repos, imports, workspace) |
+| `agentic_search` | Search outputs by text + metadata (agent_type, role, concept, observation, property) |
+| `agentic_knowledge` | Tag summary — what concepts, observations, properties the platform has indexed |
+| `agentic_export` | Build a portable export package from internal knowledge, driven by a framing query |
+| `agentic_list_exports` | List all existing export packages |
 
-| Command | What it does |
-|---------|-------------|
-| `/status` | Platform health — agents discovered, queue depth, data size, hook status |
-| `/infra` | Run the infrastructure agent — check if the platform can handle what it's producing |
-| `/docs` | Run the docs agent — update README with current state |
-| `/dispatch <event_type> <repo>` | Manually emit an event and let the dispatcher route it |
-| `/experiment <seed_file>` | Start a new experiment run from a seed packet |
-| `/judge <run_id>` | Score an experiment run against the 17 properties |
-| `/digest` | Human-readable summary of recent agent activity |
-| `/save "message"` | Commit current state with a descriptive message |
+## Directory Structure
 
-### How to invoke these
-
-These aren't magic — they map to Python calls. When Claude sees `/status` in this repo,
-it should run:
-
-```python
-# /status
-from agents.infra_agent import InfraAgent
-finding = InfraAgent().execute()
-# Report finding.summary and finding.data["stats"]
-
-# /docs
-from agents.docs_agent import DocsAgent
-finding = DocsAgent().execute()
-
-# /infra (same as /status but more detailed)
-from agents.infra_agent import InfraAgent
-finding = InfraAgent().execute()
-# Report full finding.data including issues and warnings
-
-# /digest
-from core.state import state
-s = state()
-print(s.digest())
-for r in s.recent(10):
-    print(f"  {r.agent_type}: {r.status} — {r.finding}")
 ```
-
-## Code Patterns
-
-### Emitting Events
-
-```python
-from core.event_queue import emit
-
-emit("file_changed", {
-    "repo": "system3",
-    "path": "primitives.py",
-    "commit": "abc123",
-    "diff_summary": "V derivation updated"
-})
-```
-
-### Defining an Agent
-
-```python
-from agents.base import Agent
-
-class MyAgent(Agent):
-    name = "my-agent"
-    triggers = ["file_changed:system3/primitives.py"]
-
-    def run(self, event):
-        # Do work, return finding
-        return self.finding("Constants still consistent", severity="info")
-```
-
-### Human Gates
-
-```python
-from core.state import require_approval
-
-@require_approval("Modifying system3 code")
-def apply_fix(repo, file_path, edit):
-    # This won't execute until human approves via dashboard
-    ...
+Agentic/
+├── core/
+│   ├── server.py        — FastAPI server, dashboard, scheduler, judge/health/search endpoints
+│   ├── state.py         — thread-safe agent record tracking, persistence
+│   ├── vector_store.py  — numpy-backed vector store, filtered search by tags, auto-indexing
+│   ├── metadata.py      — auto-extracts tags from agent outputs (observations, properties, concepts, files)
+│   ├── event_queue.py   — event emission, queuing, persistence
+│   ├── dispatcher.py    — event → agent routing (trigger rules, cooldowns, spool consumption)
+│   └── export.py        — build portable review packages (search, gather, synthesize)
+├── agents/
+│   ├── configs.py       — 8 agent type definitions (prompts, tools, settings)
+│   └── spawner.py       — spawn_interactive() and spawn_headless(), auto-indexes outputs
+├── claude/
+│   └── mcp_bridge.py    — 13 MCP tools for agent self-service (stdio server)
+├── data/
+│   ├── outputs/         — headless agent output files
+│   ├── state/           — agent records (JSON)
+│   ├── vectors/         — vector store persistence
+│   ├── exports/         — portable review packages
+│   ├── prompts/         — generated system prompt files
+│   ├── launchers/       — generated PowerShell launcher scripts
+│   ├── events/          — event log
+│   └── spool/           — offline event queue
+├── experiments/
+│   ├── judge.py         — 2-phase evaluation (mechanical + LLM, 17 properties)
+│   ├── seeds/           — experiment seed packets
+│   └── runs/            — experiment results (isolated per run, with verdict.json)
+├── hooks/
+│   ├── post_commit.py   — event emission hook for connected repos
+│   └── install.py       — batch install/uninstall/status across repos
+├── .github/workflows/
+│   ├── on_push.yml      — validate imports, run workspace code, mechanical judge
+│   ├── nightly.yml      — maintenance sweep, syntax check, judge
+│   ├── digest.yml       — morning digest with workspace + verdict status
+│   └── judge.yml        — manual trigger: full experiment judge
+└── workspace/           — the build workspace (agents create here)
 ```

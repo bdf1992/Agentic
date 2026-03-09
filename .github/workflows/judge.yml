@@ -1,0 +1,40 @@
+name: Judge — Evaluate Workspace
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_dir:
+        description: "Directory to judge (relative to repo root)"
+        required: false
+        default: "workspace"
+      skip_llm:
+        description: "Skip LLM scoring (faster, mechanical only)"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  judge:
+    name: Run Experiment Judge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Run judge
+        run: |
+          python experiments/judge.py "${{ github.event.inputs.run_dir || 'workspace' }}" ${{ github.event.inputs.skip_llm == 'true' && '--skip-llm' || '' }}
+
+      - name: Upload verdict
+        uses: actions/upload-artifact@v4
+        with:
+          name: verdict
+          path: "${{ github.event.inputs.run_dir || 'workspace' }}/verdict.json"
+          if-no-files-found: warn

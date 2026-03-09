@@ -23,14 +23,25 @@ jobs:
       - name: Generate digest
         run: |
           python -c "
+          import json
+          from pathlib import Path
           from core.state import state
+          from core.dispatcher import Dispatcher
+          from core.export import list_exports
+          from agents.configs import list_agent_types
+          from experiments.judge import phase1_mechanical
+
           s = state()
           d = s.digest()
+
           print('=== AGENTIC MORNING DIGEST ===')
-          print(f'Active agents: {d[\"active\"]}')
-          print(f'Pending review: {d[\"pending_review\"]}')
-          print(f'Completed (24h): {d[\"completed_today\"]}')
-          print(f'Failed (24h): {d[\"failed_today\"]}')
+          print()
+          print(f'Active agents:    {d[\"active\"]}')
+          print(f'Pending review:   {d[\"pending_review\"]}')
+          print(f'Completed (24h):  {d[\"completed_today\"]}')
+          print(f'Failed (24h):     {d[\"failed_today\"]}')
+
+          # Pending decisions
           pending = s.pending_review()
           if pending:
               print()
@@ -40,4 +51,47 @@ jobs:
           else:
               print()
               print('Nothing pending. All clear.')
+
+          # Workspace status
+          ws = Path('workspace')
+          if ws.exists():
+              py_files = list(ws.glob('*.py'))
+              md_files = list(ws.glob('*.md'))
+              print()
+              print(f'--- WORKSPACE ---')
+              print(f'Python files: {len(py_files)}')
+              print(f'Markdown files: {len(md_files)}')
+
+              # Quick mechanical check
+              mech = phase1_mechanical(ws)
+              print(f'All code runs: {mech.all_code_runs}')
+              print(f'Has eigenvalues: {mech.has_eigenvalues}')
+              print(f'Smuggled constants: {len(mech.smuggled)}')
+
+          # Dispatcher & Exports
+          disp = Dispatcher()
+          disp_status = disp.status()
+          print()
+          print('--- DISPATCHER ---')
+          print(f'Trigger rules: {len(disp_status[\"trigger_rules\"])} event types')
+          for evt, agents in disp_status['trigger_rules'].items():
+              print(f'  {evt} -> {agents}')
+          exports = list_exports()
+          if exports:
+              print()
+              print(f'--- EXPORTS ({len(exports)}) ---')
+              for ex in exports[:5]:
+                  print(f'  {ex[\"name\"]}: {ex.get(\"framing\", \"\")} ({ex.get(\"file_count\", 0)} files)')
+
+          # Verdicts
+          verdicts = list(Path('.').rglob('verdict.json'))
+          if verdicts:
+              print()
+              print('--- VERDICTS ---')
+              for vf in verdicts:
+                  try:
+                      v = json.loads(vf.read_text())
+                      print(f'  {v.get(\"run_id\", vf.parent.name)}: {v.get(\"verdict\", \"?\")}')
+                  except Exception:
+                      pass
           "

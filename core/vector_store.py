@@ -64,6 +64,46 @@ class VectorStore:
             results.append((self._docs[doc_id], float(scores[idx])))
         return results
 
+    def filter(self, tag: str = "", agent_type: str = "", role: str = "",
+               concept: str = "", observation: str = "", prop: str = "",
+               text_query: str = "", limit: int = 20) -> list[Document]:
+        """Filter documents by metadata tags and/or text content.
+
+        Supports filtering by:
+          tag: any raw tag (e.g. "type:probe", "obs:O3", "concept:eigenvalue")
+          agent_type, role, concept, observation, prop: shorthand filters
+          text_query: substring match in document text
+        """
+        results = []
+        for doc in self._docs.values():
+            tags = doc.metadata.get("tags", [])
+            if tag and tag not in tags:
+                continue
+            if agent_type and f"type:{agent_type}" not in tags:
+                continue
+            if role and f"role:{role}" not in tags:
+                continue
+            if concept and f"concept:{concept}" not in tags:
+                continue
+            if observation and f"obs:{observation}" not in tags:
+                continue
+            if prop and f"prop:{prop}" not in tags:
+                continue
+            if text_query and text_query.lower() not in doc.text.lower():
+                continue
+            results.append(doc)
+            if len(results) >= limit:
+                break
+        return results
+
+    def tag_summary(self) -> dict:
+        """Aggregate tag counts — shows what the store knows about."""
+        counts: dict[str, int] = {}
+        for doc in self._docs.values():
+            for tag in doc.metadata.get("tags", []):
+                counts[tag] = counts.get(tag, 0) + 1
+        return dict(sorted(counts.items(), key=lambda x: -x[1]))
+
     def get(self, doc_id: str) -> Optional[Document]:
         return self._docs.get(doc_id)
 

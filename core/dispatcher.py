@@ -1,9 +1,9 @@
 """
 Event Dispatcher — the autonomic nervous system.
 
-Connects the event queue to the agent roster. When an event arrives:
-1. Check all registered agent types for trigger matches
-2. Spawn matching agents (in background threads)
+Connects the event queue to agent spawning. When an event arrives:
+1. Check trigger rules to determine which agent type should handle it
+2. Spawn matching agents via the config-based spawner
 3. Collect findings into state for dashboard review
 
 The dispatcher is what makes the platform autonomous.
@@ -18,53 +18,60 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import threading
 import time
-import importlib
 from pathlib import Path
 from typing import Optional
 
 from core.event_queue import Event, register, queue
 from core.state import state
-from agents.base import Agent
+from agents.configs import AGENTS, get_agent_config
 
 
-# All agent classes, discovered from agents/ directory
-def _discover_agents() -> list[type[Agent]]:
-    """Find all Agent subclasses in agents/."""
-    agents_dir = Path(__file__).parent.parent / "agents"
-    agent_classes = []
+# ---------------------------------------------------------------------------
+# Trigger rules: event type → agent type(s) to spawn
+# ---------------------------------------------------------------------------
 
-    for py_file in agents_dir.glob("*_agent.py"):
-        module_name = f"agents.{py_file.stem}"
-        try:
-            mod = importlib.import_module(module_name)
-            for attr_name in dir(mod):
-                attr = getattr(mod, attr_name)
-                if (isinstance(attr, type)
-                        and issubclass(attr, Agent)
-                        and attr is not Agent
-                        and hasattr(attr, 'triggers')):
-                    agent_classes.append(attr)
-        except Exception as e:
-            print(f"[dispatcher] Failed to load {module_name}: {e}")
+TRIGGER_RULES: dict[str, list[str]] = {
+    # Code changes → validate
+    "commit":        ["guardian"],
+    "push":          ["guardian"],
 
-    return agent_classes
+    # Test failures → investigate
+    "test_failed":   ["guardian"],
+
+    # File changes in workspace → synthesis looks for patterns
+    "file_changed":  ["synthesis"],
+
+    # Scheduled / timer events → orchestrator decides
+    "timer":         ["orchestrator"],
+    "schedule":      ["orchestrator"],
+
+    # Manual command events
+    "command":       [],  # handled by payload["agent_type"] if present
+
+    # Health alerts → infrastructure
+    "health_alert":  ["infra"],
+
+    # Build completion → judge + synthesis
+    "build_complete": ["synthesis"],
+}
 
 
 class Dispatcher:
-    """Routes events to matching agents."""
+    """Routes events to matching agents via config-based spawning."""
 
     def __init__(self, poll_interval: float = 2.0):
-        self._agent_classes = _discover_agents()
         self._poll_interval = poll_interval
         self._running = False
         self._thread: Optional[threading.Thread] = None
-        self._workers: list[threading.Thread] = []
+        self._lock = threading.Lock()
+        self._recent_spawns: dict[str, float] = {}  # agent_type → last spawn time
+        self._cooldown = 120.0  # seconds between spawns of same type
 
-        # Log what we found
-        names = [cls.name for cls in self._agent_classes]
-        print(f"[dispatcher] Discovered {len(self._agent_classes)} agent types: {', '.join(names)}")
+        agent_names = [cfg["name"] for cfg in AGENTS.values()]
+        print(f"[dispatcher] Available agent types: {', '.join(agent_names)}")
 
     def start(self):
         """Start the dispatcher in a background thread."""
@@ -72,11 +79,8 @@ class Dispatcher:
             return
 
         self._running = True
-
-        # Register for all events on the queue
         register("*", self._on_event)
 
-        # Also start a polling thread for batched/spool events
         self._thread = threading.Thread(target=self._poll_loop, daemon=True)
         self._thread.start()
         print("[dispatcher] Started")
@@ -86,54 +90,53 @@ class Dispatcher:
         self._running = False
         if self._thread:
             self._thread.join(timeout=5)
-        # Wait for workers to finish
-        for w in self._workers:
-            w.join(timeout=10)
         print("[dispatcher] Stopped")
 
     def _on_event(self, event: Event):
-        """Called immediately when an event is emitted. Spawns matching agents."""
-        for agent_cls in self._agent_classes:
+        """Called when an event is emitted. Spawns matching agents."""
+        # Determine which agent types to spawn
+        agent_types = self._match(event)
+
+        for agent_type in agent_types:
+            if not self._can_spawn(agent_type):
+                print(f"[dispatcher] {agent_type} on cooldown, skipping")
+                continue
+
             try:
-                agent = agent_cls()
-                if agent.matches(event):
-                    print(f"[dispatcher] {event.type} → spawning {agent.name}")
-                    t = threading.Thread(
-                        target=self._run_agent,
-                        args=(agent, event),
-                        daemon=True,
-                    )
-                    t.start()
-                    self._workers.append(t)
+                # Lazy import to avoid circular dependency
+                from agents.spawner import spawn_headless
+                print(f"[dispatcher] {event.type} → spawning {agent_type}")
+                spawn_headless(agent_type)
+                with self._lock:
+                    self._recent_spawns[agent_type] = time.time()
             except Exception as e:
-                print(f"[dispatcher] Error checking {agent_cls}: {e}")
+                print(f"[dispatcher] Error spawning {agent_type}: {e}")
 
-        # Clean up finished workers
-        self._workers = [w for w in self._workers if w.is_alive()]
+    def _match(self, event: Event) -> list[str]:
+        """Determine which agent types should handle this event."""
+        # Check for explicit agent_type in command events
+        if event.type == "command" and "agent_type" in event.payload:
+            requested = event.payload["agent_type"]
+            if requested in AGENTS:
+                return [requested]
+            return []
 
-    def _run_agent(self, agent: Agent, event: Event):
-        """Execute an agent in a background thread."""
-        try:
-            finding = agent.execute(event)
-            severity_icon = {
-                "info": ".",
-                "warning": "!",
-                "action_required": "!!!",
-            }.get(finding.severity, "?")
+        # Look up trigger rules
+        return TRIGGER_RULES.get(event.type, [])
 
-            print(f"[dispatcher] {agent.name} finished [{severity_icon}]: {finding.summary[:100]}")
-        except Exception as e:
-            print(f"[dispatcher] {agent.name} crashed: {e}")
+    def _can_spawn(self, agent_type: str) -> bool:
+        """Check cooldown — don't spam the same agent type."""
+        with self._lock:
+            last = self._recent_spawns.get(agent_type, 0)
+            return (time.time() - last) >= self._cooldown
 
     def _poll_loop(self):
         """Poll for spool files (events that arrived while server was down)."""
         spool_dir = Path(__file__).parent.parent / "data" / "spool"
 
         while self._running:
-            # Check for spooled events
             if spool_dir.exists():
-                import json
-                for spool_file in spool_dir.glob("*.json"):
+                for spool_file in sorted(spool_dir.glob("*.json")):
                     try:
                         data = json.loads(spool_file.read_text())
                         event = Event(
@@ -142,7 +145,7 @@ class Dispatcher:
                             payload=data.get("payload", {}),
                         )
                         self._on_event(event)
-                        spool_file.unlink()  # consumed
+                        spool_file.unlink()
                         print(f"[dispatcher] Consumed spool event: {event.type}")
                     except Exception as e:
                         print(f"[dispatcher] Bad spool file {spool_file}: {e}")
@@ -151,8 +154,15 @@ class Dispatcher:
 
     def status(self) -> dict:
         """Current dispatcher state."""
+        with self._lock:
+            active_cooldowns = {
+                k: round(self._cooldown - (time.time() - v))
+                for k, v in self._recent_spawns.items()
+                if (time.time() - v) < self._cooldown
+            }
         return {
             "running": self._running,
-            "agent_types": [cls.name for cls in self._agent_classes],
-            "active_workers": len([w for w in self._workers if w.is_alive()]),
+            "agent_types": list(AGENTS.keys()),
+            "trigger_rules": {k: v for k, v in TRIGGER_RULES.items() if v},
+            "cooldowns": active_cooldowns,
         }
