@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Distinction Algebra — Torus Renderer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; color: #e0e0e0; font-family: 'Courier New', monospace; overflow: hidden; }
+#canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+canvas { display: block; }
+
+#panel {
+    position: absolute; top: 16px; right: 16px; width: 340px;
+    background: rgba(10,10,20,0.92); border: 1px solid #333;
+    border-radius: 8px; padding: 16px; font-size: 12px;
+    max-height: calc(100vh - 32px); overflow-y: auto;
+}
+#panel h2 { color: #7af; margin-bottom: 8px; font-size: 14px; }
+#panel h3 { color: #aaa; margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.state-row {
+    display: flex; align-items: center; gap: 8px; padding: 3px 0;
+    border-bottom: 1px solid #1a1a2a;
+}
+.color-swatch {
+    width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0;
+    border: 1px solid #444;
+}
+.state-label { flex: 1; }
+.state-value { color: #888; font-size: 10px; }
+.pass { color: #4c4; }
+.fail { color: #c44; }
+
+#controls {
+    position: absolute; bottom: 16px; left: 16px;
+    background: rgba(10,10,20,0.92); border: 1px solid #333;
+    border-radius: 8px; padding: 12px 16px; font-size: 12px;
+}
+#controls label { display: block; margin: 6px 0 2px; color: #888; }
+#controls input[type=range] { width: 200px; }
+.val { color: #7af; float: right; }
+
+#info {
+    position: absolute; bottom: 16px; right: 16px;
+    background: rgba(10,10,20,0.85); border: 1px solid #333;
+    border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #666;
+}
+</style>
+</head>
+<body>
+<div id="canvas-container"></div>
+
+<div id="panel">
+    <h2>Distinction Algebra Renderer</h2>
+    <div style="color:#888; margin-bottom:8px;">
+        Surface: <span style="color:#7af">torus</span> |
+        Vertices: <span style="color:#7af">81</span> |
+        Faces: <span style="color:#7af">162</span> |
+        chi: <span style="color:#7af">0</span>
+    </div>
+
+    <h3>Z3 x Z2 States</h3>
+    <div id="states-panel"></div>
+
+    <h3>Coherence Tests</h3>
+    <div id="coherence-panel"></div>
+
+    <h3>Forced Mappings</h3>
+    <div style="font-size:10px; color:#888; line-height:1.5;">
+        Z3 position &rarr; vertex placement (roots of unity)<br>
+        Z2 color &rarr; hue polarity (complementary shift)<br>
+        U(1) &rarr; continuous hue wheel<br>
+        2/3 &rarr; brightness, amplitude, spring constant<br>
+        (2/3)^d &rarr; texture grain density<br>
+        Eigenvalues &rarr; oscillation frequencies<br>
+        Boundary &rarr; black / silence / flat
+    </div>
+</div>
+
+<div id="controls">
+    <strong style="color:#7af;">Controls</strong>
+    <label>Alpha (Z2 position) <span class="val" id="alpha-val">0.50</span></label>
+    <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5">
+    <label>Animation speed <span class="val" id="speed-val">1.0</span></label>
+    <input type="range" id="speed" min="0" max="3" step="0.1" value="1.0">
+    <label>Texture octaves <span class="val" id="octaves-val">6</span></label>
+    <input type="range" id="octaves" min="1" max="8" step="1" value="6">
+    <label>Wireframe <input type="checkbox" id="wireframe"></label>
+</div>
+
+<div id="info">
+    Every parameter derived from algebra. No magic numbers. Spectral gap = 2/3.
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// --- Data from Python ---
+const meshData = {"positions": [3.0, 0.0, 0.0, 2.766044443118978, 0.0, 0.6427876096865393, 2.1736481776669305, 0.0, 0.984807753012208, 1.5000000000000002, 0.0, 0.8660254037844387, 1.0603073792140916, 0.0, 0.3420201433256689, 1.0603073792140916, 0.0, -0.34202014332566866, 1.4999999999999996, 0.0, -0.8660254037844385, 2.17364817766693, 0.0, -0.9848077530122081, 2.766044443118978, 0.0, -0.6427876096865396, 2.298133329356934, 1.9283628290596178, 0.0, 2.1189129750714213, 1.7779790958791823, 0.6427876096865393, 1.6651111077974452, 1.3971941164220283, 0.984807753012208, 1.1490666646784673, 0.964181414529809, 0.8660254037844387, 0.8122425758450018, 0.6815524458180249, 0.3420201433256689, 0.8122425758450018, 0.6815524458180249, -0.34202014332566866, 1.1490666646784666, 0.9641814145298085, -0.8660254037844385, 1.6651111077974448, 1.397194116422028, -0.9848077530122081, 2.1189129750714213, 1.7779790958791823, -0.6427876096865396, 0.5209445330007912, 2.954423259036624, 0.0, 0.4803185768933499, 2.724022012759905, 0.6427876096865393, 0.37745004494090667, 2.1406255776872505, 0.984807753012208, 0.2604722665003957, 1.4772116295183122, 0.8660254037844387, 0.18412044416732593, 1.0441989276260928, 0.3420201433256689, 0.18412044416732593, 1.0441989276260928, -0.34202014332566866, 0.26047226650039557, 1.4772116295183115, -0.8660254037844385, 0.3774500449409066, 2.14062557768725, -0.9848077530122081, 0.4803185768933499, 2.724022012759905, -0.6427876096865396, -1.4999999999999993, 2.598076211353316, 0.0, -1.3830222215594883, 2.395464755737816, 0.6427876096865393, -1.0868240888334648, 1.8824345407493128, 0.984807753012208, -0.7499999999999998, 1.2990381056766582, 0.8660254037844387, -0.5301536896070456, 0.9182531262195036, 0.3420201433256689, -0.5301536896070456, 0.9182531262195036, -0.34202014332566866, -0.7499999999999994, 1.2990381056766578, -0.8660254037844385, -1.0868240888334646, 1.8824345407493126, -0.9848077530122081, -1.3830222215594883, 2.395464755737816, -0.6427876096865396, -2.819077862357725, 1.0260604299770066, 0.0, -2.599231551964771, 0.9460429168807227, 0.6427876096865393, -2.042561152738352, 0.7434314612652225, 0.984807753012208, -1.4095389311788626, 0.5130302149885034, 0.8660254037844387, -0.9963630200123277, 0.36264648180806797, 0.3420201433256689, -0.9963630200123277, 0.36264648180806797, -0.34202014332566866, -1.409538931178862, 0.5130302149885032, -0.8660254037844385, -2.0425611527383514, 0.7434314612652224, -0.9848077530122081, -2.599231551964771, 0.9460429168807227, -0.6427876096865396, -2.8190778623577253, -1.026060429977006, 0.0, -2.599231551964771, -0.9460429168807222, 0.6427876096865393, -2.042561152738352, -0.7434314612652221, 0.984807753012208, -1.4095389311788629, -0.5130302149885031, 0.8660254037844387, -0.9963630200123278, -0.3626464818080677, 0.3420201433256689, -0.9963630200123278, -0.3626464818080677, -0.34202014332566866, -1.4095389311788622, -0.5130302149885029, -0.8660254037844385, -2.0425611527383514, -0.743431461265222, -0.9848077530122081, -2.599231551964771, -0.9460429168807222, -0.6427876096865396, -1.5000000000000013, -2.5980762113533156, 0.0, -1.3830222215594903, -2.395464755737815, 0.6427876096865393, -1.0868240888334662, -1.8824345407493124, 0.984807753012208, -0.7500000000000008, -1.299038105676658, 0.8660254037844387, -0.5301536896070462, -0.9182531262195034, 0.3420201433256689, -0.5301536896070462, -0.9182531262195034, -0.34202014332566866, -0.7500000000000004, -1.2990381056766573, -0.8660254037844385, -1.086824088833466, -1.882434540749312, -0.9848077530122081, -1.3830222215594903, -2.395464755737815, -0.6427876096865396, 0.5209445330007899, -2.9544232590366244, 0.0, 0.48031857689334867, -2.7240220127599053, 0.6427876096865393, 0.3774500449409057, -2.140625577687251, 0.984807753012208, 0.260472266500395, -1.4772116295183124, 0.8660254037844387, 0.18412044416732545, -1.0441989276260928, 0.3420201433256689, 0.18412044416732545, -1.0441989276260928, -0.34202014332566866, 0.2604722665003949, -1.4772116295183118, -0.8660254037844385, 0.3774500449409056, -2.1406255776872505, -0.9848077530122081, 0.48031857689334867, -2.7240220127599053, -0.6427876096865396, 2.2981333293569333, -1.9283628290596186, 0.0, 2.1189129750714204, -1.7779790958791832, 0.6427876096865393, 1.6651111077974448, -1.397194116422029, 0.984807753012208, 1.1490666646784669, -0.9641814145298095, 0.8660254037844387, 0.8122425758450016, -0.6815524458180252, 0.3420201433256689, 0.8122425758450016, -0.6815524458180252, -0.34202014332566866, 1.1490666646784664, -0.9641814145298091, -0.8660254037844385, 1.6651111077974443, -1.3971941164220287, -0.9848077530122081, 2.1189129750714204, -1.7779790958791832, -0.6427876096865396], "indices": [0, 9, 10, 0, 10, 1, 1, 10, 11, 1, 11, 2, 2, 11, 12, 2, 12, 3, 3, 12, 13, 3, 13, 4, 4, 13, 14, 4, 14, 5, 5, 14, 15, 5, 15, 6, 6, 15, 16, 6, 16, 7, 7, 16, 17, 7, 17, 8, 8, 17, 9, 8, 9, 0, 9, 18, 19, 9, 19, 10, 10, 19, 20, 10, 20, 11, 11, 20, 21, 11, 21, 12, 12, 21, 22, 12, 22, 13, 13, 22, 23, 13, 23, 14, 14, 23, 24, 14, 24, 15, 15, 24, 25, 15, 25, 16, 16, 25, 26, 16, 26, 17, 17, 26, 18, 17, 18, 9, 18, 27, 28, 18, 28, 19, 19, 28, 29, 19, 29, 20, 20, 29, 30, 20, 30, 21, 21, 30, 31, 21, 31, 22, 22, 31, 32, 22, 32, 23, 23, 32, 33, 23, 33, 24, 24, 33, 34, 24, 34, 25, 25, 34, 35, 25, 35, 26, 26, 35, 27, 26, 27, 18, 27, 36, 37, 27, 37, 28, 28, 37, 38, 28, 38, 29, 29, 38, 39, 29, 39, 30, 30, 39, 40, 30, 40, 31, 31, 40, 41, 31, 41, 32, 32, 41, 42, 32, 42, 33, 33, 42, 43, 33, 43, 34, 34, 43, 44, 34, 44, 35, 35, 44, 36, 35, 36, 27, 36, 45, 46, 36, 46, 37, 37, 46, 47, 37, 47, 38, 38, 47, 48, 38, 48, 39, 39, 48, 49, 39, 49, 40, 40, 49, 50, 40, 50, 41, 41, 50, 51, 41, 51, 42, 42, 51, 52, 42, 52, 43, 43, 52, 53, 43, 53, 44, 44, 53, 45, 44, 45, 36, 45, 54, 55, 45, 55, 46, 46, 55, 56, 46, 56, 47, 47, 56, 57, 47, 57, 48, 48, 57, 58, 48, 58, 49, 49, 58, 59, 49, 59, 50, 50, 59, 60, 50, 60, 51, 51, 60, 61, 51, 61, 52, 52, 61, 62, 52, 62, 53, 53, 62, 54, 53, 54, 45, 54, 63, 64, 54, 64, 55, 55, 64, 65, 55, 65, 56, 56, 65, 66, 56, 66, 57, 57, 66, 67, 57, 67, 58, 58, 67, 68, 58, 68, 59, 59, 68, 69, 59, 69, 60, 60, 69, 70, 60, 70, 61, 61, 70, 71, 61, 71, 62, 62, 71, 63, 62, 63, 54, 63, 72, 73, 63, 73, 64, 64, 73, 74, 64, 74, 65, 65, 74, 75, 65, 75, 66, 66, 75, 76, 66, 76, 67, 67, 76, 77, 67, 77, 68, 68, 77, 78, 68, 78, 69, 69, 78, 79, 69, 79, 70, 70, 79, 80, 70, 80, 71, 71, 80, 72, 71, 72, 63, 72, 0, 1, 72, 1, 73, 73, 1, 2, 73, 2, 74, 74, 2, 3, 74, 3, 75, 75, 3, 4, 75, 4, 76, 76, 4, 5, 76, 5, 77, 77, 5, 6, 77, 6, 78, 78, 6, 7, 78, 7, 79, 79, 7, 8, 79, 8, 80, 80, 8, 0, 80, 0, 72], "colors": [0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "texture": [0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, -0.2624405901539836, -0.26244059015398247, -0.2624405901539836, -0.26244059015398247, -0.2624405901539836, -0.2624405901539836, -0.2624405901539836, -0.2624405901539836, -0.26244059015398247, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.6698980739765679, -0.6698980739765679, -0.669898073976566, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -0.9706655403374316, -0.9706655403374316, -0.9706655403374329, -0.9706655403374316, -0.9706655403374316, -0.9706655403374316, -0.9706655403374329, -0.9706655403374316, -0.9706655403374316], "frequencies": [146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0], "z3_labels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2], "n_vertices": 81, "n_faces": 162, "euler": 0, "curvature_total": 0.0, "surface_type": "torus", "spectral_gap": 0.6666666666666666};
+const statesData = [{"algebra": {"position": 0, "color": 0, "label": "thing", "sign": "+", "alive": true}, "color": {"hue_radians": 0.0, "hue_degrees": 0.0, "brightness": 0.6666666666666666, "rgb": [0.6666666666666666, 0.0, 0.0]}, "sound": {"frequency_hz": 146.66666666666666, "amplitude": 0.6666666666666666, "harmonic_ratios": {"boundary : position": 3.0, "position : color": 10000000000.0, "gap as interval": 0.6666666666666666, "gap as pitch ratio": 1.5}}, "geometry": {"curvature": 4.1887902047863905, "euler_characteristic": 0, "surface": "torus"}, "texture": {"grain_density_1d": 0.6666666666666666, "grain_density_2d": 0.4444444444444444, "grain_density_3d": 0.2962962962962962, "fractal_dimension": 0.6309297535714574}}, {"algebra": {"position": 0, "color": 1, "label": "thing", "sign": "-", "alive": true}, "color": {"hue_radians": 3.141592653589793, "hue_degrees": 180.0, "brightness": 0.6666666666666666, "rgb": [0.0, 0.6666666666666666, 0.6666666666666666]}, "sound": {"frequency_hz": 146.66666666666666, "amplitude": 0.6666666666666666, "harmonic_ratios": {"boundary : position": 3.0, "position : color": 10000000000.0, "gap as interval": 0.6666666666666666, "gap as pitch ratio": 1.5}}, "geometry": {"curvature": 4.1887902047863905, "euler_characteristic": 0, "surface": "torus"}, "texture": {"grain_density_1d": 0.6666666666666666, "grain_density_2d": 0.4444444444444444, "grain_density_3d": 0.2962962962962962, "fractal_dimension": 0.6309297535714574}}, {"algebra": {"position": 1, "color": 0, "label": "complement", "sign": "+", "alive": true}, "color": {"hue_radians": 2.0943951023931953, "hue_degrees": 119.99999999999999, "brightness": 0.6666666666666666, "rgb": [0.0, 0.6666666666666666, 0.0]}, "sound": {"frequency_hz": 146.66666666666666, "amplitude": 0.6666666666666666, "harmonic_ratios": {"boundary : position": 3.0, "position : color": 10000000000.0, "gap as interval": 0.6666666666666666, "gap as pitch ratio": 1.5}}, "geometry": {"curvature": 4.1887902047863905, "euler_characteristic": 0, "surface": "torus"}, "texture": {"grain_density_1d": 0.6666666666666666, "grain_density_2d": 0.4444444444444444, "grain_density_3d": 0.2962962962962962, "fractal_dimension": 0.6309297535714574}}, {"algebra": {"position": 1, "color": 1, "label": "complement", "sign": "-", "alive": true}, "color": {"hue_radians": 5.235987755982988, "hue_degrees": 299.99999999999994, "brightness": 0.6666666666666666, "rgb": [0.6666666666666666, 0.0, 0.6666666666666666]}, "sound": {"frequency_hz": 146.66666666666666, "amplitude": 0.6666666666666666, "harmonic_ratios": {"boundary : position": 3.0, "position : color": 10000000000.0, "gap as interval": 0.6666666666666666, "gap as pitch ratio": 1.5}}, "geometry": {"curvature": 4.1887902047863905, "euler_characteristic": 0, "surface": "torus"}, "texture": {"grain_density_1d": 0.6666666666666666, "grain_density_2d": 0.4444444444444444, "grain_density_3d": 0.2962962962962962, "fractal_dimension": 0.6309297535714574}}, {"algebra": {"position": 2, "color": 0, "label": "boundary", "sign": "+", "alive": false}, "color": {"hue_radians": 4.1887902047863905, "hue_degrees": 239.99999999999997, "brightness": 0.0, "rgb": [0.0, 0.0, 0.0]}, "sound": {"frequency_hz": 440.0, "amplitude": 0.0, "harmonic_ratios": {"boundary : position": 3.0, "position : color": 10000000000.0, "gap as interval": 0.6666666666666666, "gap as pitch ratio": 1.5}}, "geometry": {"curvature": 4.1887902047863905, "euler_characteristic": 0, "surface": "torus"}, "texture": {"grain_density_1d": 0.6666666666666666, "grain_density_2d": 0.4444444444444444, "grain_density_3d": 0.2962962962962962, "fractal_dimension": 0.6309297535714574}}, {"algebra": {"position": 2, "color": 1, "label": "boundary", "sign": "-", "alive": false}, "color": {"hue_radians": 1.0471975511965974, "hue_degrees": 59.999999999999986, "brightness": 0.0, "rgb": [0.0, 0.0, 0.0]}, "sound": {"frequency_hz": 440.0, "amplitude": 0.0, "harmonic_ratios": {"boundary : position": 3.0, "position : color": 10000000000.0, "gap as interval": 0.6666666666666666, "gap as pitch ratio": 1.5}}, "geometry": {"curvature": 4.1887902047863905, "euler_characteristic": 0, "surface": "torus"}, "texture": {"grain_density_1d": 0.6666666666666666, "grain_density_2d": 0.4444444444444444, "grain_density_3d": 0.2962962962962962, "fractal_dimension": 0.6309297535714574}}];
+const coherenceData = {"brightness_invariant": true, "amplitude_invariant": true, "texture_self_similar": true, "z3_triad_augmented": true, "boundary_is_null": true, "gauss_bonnet": true};
+
+// --- Scene setup ---
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0f);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(4, 3, 5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+
+// --- Lighting (minimal — colors come from algebra) ---
+const ambient = new THREE.AmbientLight(0x404050, 0.6);
+scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 5, 5);
+scene.add(dirLight);
+const backLight = new THREE.DirectionalLight(0x4466aa, 0.3);
+backLight.position.set(-3, -2, -4);
+scene.add(backLight);
+
+// --- Build geometry from mesh data ---
+const geometry = new THREE.BufferGeometry();
+
+const positions = new Float32Array(meshData.positions);
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+const colors = new Float32Array(meshData.colors);
+geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+const indices = new Uint32Array(meshData.indices);
+geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
+geometry.computeVertexNormals();
+
+// Store original colors for animation
+const originalColors = new Float32Array(colors);
+
+// Texture values as custom attribute
+const texVals = new Float32Array(meshData.texture);
+geometry.setAttribute('texValue', new THREE.BufferAttribute(texVals, 1));
+
+// --- Material ---
+const material = new THREE.MeshPhongMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    shininess: 40,
+    specular: new THREE.Color(0x222233),
+});
+
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+
+// Wireframe overlay
+const wireframeMat = new THREE.MeshBasicMaterial({
+    color: 0x334455,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.15,
+});
+const wireframeMesh = new THREE.Mesh(geometry, wireframeMat);
+wireframeMesh.visible = false;
+scene.add(wireframeMesh);
+
+// --- Populate info panels ---
+const statesPanel = document.getElementById('states-panel');
+statesData.forEach(s => {
+    const alg = s.algebra;
+    const col = s.color;
+    const snd = s.sound;
+    const [r, g, b] = col.rgb;
+    const rgbStr = `rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`;
+    const row = document.createElement('div');
+    row.className = 'state-row';
+    row.innerHTML = `
+        <div class="color-swatch" style="background:${rgbStr}"></div>
+        <div class="state-label">${alg.sign}${alg.label}</div>
+        <div class="state-value">${col.hue_degrees.toFixed(0)}deg ${snd.frequency_hz.toFixed(0)}Hz</div>
+    `;
+    statesPanel.appendChild(row);
+});
+
+const cohPanel = document.getElementById('coherence-panel');
+Object.entries(coherenceData).forEach(([name, passed]) => {
+    const div = document.createElement('div');
+    div.className = passed ? 'pass' : 'fail';
+    div.textContent = `[${passed ? 'PASS' : 'FAIL'}] ${name}`;
+    div.style.fontSize = '10px';
+    div.style.padding = '1px 0';
+    cohPanel.appendChild(div);
+});
+
+// --- Animation ---
+const GAP = 2.0 / 3.0;
+let animSpeed = 1.0;
+
+function animate(time) {
+    requestAnimationFrame(animate);
+    const t = time * 0.001 * animSpeed;
+
+    // Vertex color oscillation at eigenvalue frequencies
+    // Each vertex pulses at its eigenvalue frequency, amplitude = 2/3
+    const colAttr = geometry.getAttribute('color');
+    const nVerts = meshData.n_vertices;
+    for (let i = 0; i < nVerts; i++) {
+        const freq = meshData.frequencies[i];
+        const z3 = meshData.z3_labels[i];
+
+        // Oscillation: brightness modulated by spectral gap
+        const phase = z3 * 2.0 * Math.PI / 3.0;  // Z₃ phase offset
+        const pulse = 0.5 + 0.5 * GAP * Math.sin(freq * t * 0.01 + phase);
+
+        colAttr.setXYZ(i,
+            originalColors[i * 3] * pulse,
+            originalColors[i * 3 + 1] * pulse,
+            originalColors[i * 3 + 2] * pulse
+        );
+    }
+    colAttr.needsUpdate = true;
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate(0);
+
+// --- Controls ---
+document.getElementById('alpha').addEventListener('input', e => {
+    const alpha = parseFloat(e.target.value);
+    document.getElementById('alpha-val').textContent = alpha.toFixed(2);
+    // Recompute colors with new alpha
+    for (let i = 0; i < meshData.n_vertices; i++) {
+        const z3 = meshData.z3_labels[i];
+        const z2 = i % 2;
+        // Recompute hue from Z₃ position
+        let hue = (2 * Math.PI * z3) / 3;
+        if (z2 === 1) hue = (hue + Math.PI) % (2 * Math.PI);
+        // Brightness: boundary = 0, else = 2/3
+        const brightness = (z3 === 2) ? 0 : GAP;
+        // HSV to RGB
+        const h = hue / (2 * Math.PI) * 6;
+        const c = brightness;
+        const x = c * (1 - Math.abs(h % 2 - 1));
+        let r, g, b;
+        if (h < 1) { r=c; g=x; b=0; }
+        else if (h < 2) { r=x; g=c; b=0; }
+        else if (h < 3) { r=0; g=c; b=x; }
+        else if (h < 4) { r=0; g=x; b=c; }
+        else if (h < 5) { r=x; g=0; b=c; }
+        else { r=c; g=0; b=x; }
+        originalColors[i*3] = r;
+        originalColors[i*3+1] = g;
+        originalColors[i*3+2] = b;
+    }
+});
+
+document.getElementById('speed').addEventListener('input', e => {
+    animSpeed = parseFloat(e.target.value);
+    document.getElementById('speed-val').textContent = animSpeed.toFixed(1);
+});
+
+document.getElementById('wireframe').addEventListener('change', e => {
+    wireframeMesh.visible = e.target.checked;
+});
+
+// --- Resize ---
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

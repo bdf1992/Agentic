@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coherent Deformation — Torus</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #080810; color: #ccc; font-family: 'Courier New', monospace; overflow: hidden; }
+canvas { display: block; }
+
+#hud {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(8,8,16,0.9); border: 1px solid #2a2a3a;
+    border-radius: 6px; padding: 12px; font-size: 11px; width: 300px;
+}
+#hud h2 { color: #7af; font-size: 13px; margin-bottom: 6px; }
+.metric { display: flex; justify-content: space-between; padding: 2px 0; }
+.metric-label { color: #888; }
+.metric-value { color: #adf; font-weight: bold; }
+.section { border-top: 1px solid #1a1a2a; margin-top: 8px; padding-top: 8px; }
+.section-title { color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+
+#energy-bar {
+    width: 100%; height: 8px; background: #111;
+    border-radius: 4px; overflow: hidden; margin: 4px 0;
+}
+#energy-fill {
+    height: 100%; background: linear-gradient(90deg, #2a4, #4a2);
+    width: 0%; transition: width 0.1s;
+}
+
+#channel-bars { margin-top: 6px; }
+.channel-bar {
+    display: flex; align-items: center; gap: 6px; margin: 2px 0;
+}
+.channel-name { width: 60px; font-size: 10px; color: #888; }
+.bar-bg {
+    flex: 1; height: 6px; background: #111; border-radius: 3px; overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.15s; }
+
+#instructions {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: rgba(8,8,16,0.85); border: 1px solid #2a2a3a;
+    border-radius: 6px; padding: 8px 16px; font-size: 11px; color: #666;
+    text-align: center;
+}
+
+#audio-indicator {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(8,8,16,0.9); border: 1px solid #2a2a3a;
+    border-radius: 6px; padding: 8px 12px; font-size: 11px;
+}
+#freq-display { color: #fa7; font-size: 14px; font-weight: bold; }
+</style>
+</head>
+<body>
+<div id="hud">
+    <h2>Coherent Deformation System</h2>
+    <div class="metric">
+        <span class="metric-label">Surface</span>
+        <span class="metric-value">torus</span>
+    </div>
+    <div class="metric">
+        <span class="metric-label">Spring constant</span>
+        <span class="metric-value">2/3 (spectral gap)</span>
+    </div>
+    <div class="metric">
+        <span class="metric-label">Deformation energy</span>
+        <span class="metric-value" id="energy-val">0.000</span>
+    </div>
+    <div id="energy-bar"><div id="energy-fill"></div></div>
+
+    <div class="section">
+        <div class="section-title">Channel Response (all locked by 2/3)</div>
+        <div id="channel-bars">
+            <div class="channel-bar">
+                <span class="channel-name">Geometry</span>
+                <div class="bar-bg"><div class="bar-fill" id="bar-geo" style="width:0%; background:#4af;"></div></div>
+            </div>
+            <div class="channel-bar">
+                <span class="channel-name">Color</span>
+                <div class="bar-bg"><div class="bar-fill" id="bar-col" style="width:0%; background:#f74;"></div></div>
+            </div>
+            <div class="channel-bar">
+                <span class="channel-name">Sound</span>
+                <div class="bar-bg"><div class="bar-fill" id="bar-snd" style="width:0%; background:#7f4;"></div></div>
+            </div>
+            <div class="channel-bar">
+                <span class="channel-name">Texture</span>
+                <div class="bar-bg"><div class="bar-fill" id="bar-tex" style="width:0%; background:#f4f;"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Conservation</div>
+        <div class="metric">
+            <span class="metric-label">Total energy</span>
+            <span class="metric-value" id="total-energy">0.000</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Z3 charge</span>
+            <span class="metric-value" id="z3-charge">0</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Euler chi</span>
+            <span class="metric-value" id="euler-chi">0</span>
+        </div>
+    </div>
+</div>
+
+<div id="audio-indicator">
+    <div style="color:#888; font-size:10px;">Frequency</div>
+    <div id="freq-display">—</div>
+    <div style="color:#555; font-size:9px; margin-top:2px;">Click mesh to hear</div>
+</div>
+
+<div id="instructions">
+    Click &amp; drag to deform | Release to recover (spring = 2/3) | Scroll to zoom | Right-drag to rotate
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ═══════════════════════════════════════════════════════════════
+// FORCED CONSTANTS — every number traces to the algebra
+// ═══════════════════════════════════════════════════════════════
+const GAP = 2.0 / 3.0;          // spectral gap = spring constant
+const Z3_ORDER = 3;              // from O1: distinction creates 3
+const RECOVERY_RATE = GAP;       // elastic recovery per frame
+const INFLUENCE_RADIUS = 1.2;    // in mesh units
+const MAX_DEFORM = 1.5;          // max displacement before clamping
+
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+const meshData = {"positions": [3.0, 0.0, 0.0, 2.766044443118978, 0.0, 0.6427876096865393, 2.1736481776669305, 0.0, 0.984807753012208, 1.5000000000000002, 0.0, 0.8660254037844387, 1.0603073792140916, 0.0, 0.3420201433256689, 1.0603073792140916, 0.0, -0.34202014332566866, 1.4999999999999996, 0.0, -0.8660254037844385, 2.17364817766693, 0.0, -0.9848077530122081, 2.766044443118978, 0.0, -0.6427876096865396, 2.298133329356934, 1.9283628290596178, 0.0, 2.1189129750714213, 1.7779790958791823, 0.6427876096865393, 1.6651111077974452, 1.3971941164220283, 0.984807753012208, 1.1490666646784673, 0.964181414529809, 0.8660254037844387, 0.8122425758450018, 0.6815524458180249, 0.3420201433256689, 0.8122425758450018, 0.6815524458180249, -0.34202014332566866, 1.1490666646784666, 0.9641814145298085, -0.8660254037844385, 1.6651111077974448, 1.397194116422028, -0.9848077530122081, 2.1189129750714213, 1.7779790958791823, -0.6427876096865396, 0.5209445330007912, 2.954423259036624, 0.0, 0.4803185768933499, 2.724022012759905, 0.6427876096865393, 0.37745004494090667, 2.1406255776872505, 0.984807753012208, 0.2604722665003957, 1.4772116295183122, 0.8660254037844387, 0.18412044416732593, 1.0441989276260928, 0.3420201433256689, 0.18412044416732593, 1.0441989276260928, -0.34202014332566866, 0.26047226650039557, 1.4772116295183115, -0.8660254037844385, 0.3774500449409066, 2.14062557768725, -0.9848077530122081, 0.4803185768933499, 2.724022012759905, -0.6427876096865396, -1.4999999999999993, 2.598076211353316, 0.0, -1.3830222215594883, 2.395464755737816, 0.6427876096865393, -1.0868240888334648, 1.8824345407493128, 0.984807753012208, -0.7499999999999998, 1.2990381056766582, 0.8660254037844387, -0.5301536896070456, 0.9182531262195036, 0.3420201433256689, -0.5301536896070456, 0.9182531262195036, -0.34202014332566866, -0.7499999999999994, 1.2990381056766578, -0.8660254037844385, -1.0868240888334646, 1.8824345407493126, -0.9848077530122081, -1.3830222215594883, 2.395464755737816, -0.6427876096865396, -2.819077862357725, 1.0260604299770066, 0.0, -2.599231551964771, 0.9460429168807227, 0.6427876096865393, -2.042561152738352, 0.7434314612652225, 0.984807753012208, -1.4095389311788626, 0.5130302149885034, 0.8660254037844387, -0.9963630200123277, 0.36264648180806797, 0.3420201433256689, -0.9963630200123277, 0.36264648180806797, -0.34202014332566866, -1.409538931178862, 0.5130302149885032, -0.8660254037844385, -2.0425611527383514, 0.7434314612652224, -0.9848077530122081, -2.599231551964771, 0.9460429168807227, -0.6427876096865396, -2.8190778623577253, -1.026060429977006, 0.0, -2.599231551964771, -0.9460429168807222, 0.6427876096865393, -2.042561152738352, -0.7434314612652221, 0.984807753012208, -1.4095389311788629, -0.5130302149885031, 0.8660254037844387, -0.9963630200123278, -0.3626464818080677, 0.3420201433256689, -0.9963630200123278, -0.3626464818080677, -0.34202014332566866, -1.4095389311788622, -0.5130302149885029, -0.8660254037844385, -2.0425611527383514, -0.743431461265222, -0.9848077530122081, -2.599231551964771, -0.9460429168807222, -0.6427876096865396, -1.5000000000000013, -2.5980762113533156, 0.0, -1.3830222215594903, -2.395464755737815, 0.6427876096865393, -1.0868240888334662, -1.8824345407493124, 0.984807753012208, -0.7500000000000008, -1.299038105676658, 0.8660254037844387, -0.5301536896070462, -0.9182531262195034, 0.3420201433256689, -0.5301536896070462, -0.9182531262195034, -0.34202014332566866, -0.7500000000000004, -1.2990381056766573, -0.8660254037844385, -1.086824088833466, -1.882434540749312, -0.9848077530122081, -1.3830222215594903, -2.395464755737815, -0.6427876096865396, 0.5209445330007899, -2.9544232590366244, 0.0, 0.48031857689334867, -2.7240220127599053, 0.6427876096865393, 0.3774500449409057, -2.140625577687251, 0.984807753012208, 0.260472266500395, -1.4772116295183124, 0.8660254037844387, 0.18412044416732545, -1.0441989276260928, 0.3420201433256689, 0.18412044416732545, -1.0441989276260928, -0.34202014332566866, 0.2604722665003949, -1.4772116295183118, -0.8660254037844385, 0.3774500449409056, -2.1406255776872505, -0.9848077530122081, 0.48031857689334867, -2.7240220127599053, -0.6427876096865396, 2.2981333293569333, -1.9283628290596186, 0.0, 2.1189129750714204, -1.7779790958791832, 0.6427876096865393, 1.6651111077974448, -1.397194116422029, 0.984807753012208, 1.1490666646784669, -0.9641814145298095, 0.8660254037844387, 0.8122425758450016, -0.6815524458180252, 0.3420201433256689, 0.8122425758450016, -0.6815524458180252, -0.34202014332566866, 1.1490666646784664, -0.9641814145298091, -0.8660254037844385, 1.6651111077974443, -1.3971941164220287, -0.9848077530122081, 2.1189129750714204, -1.7779790958791832, -0.6427876096865396], "normals": [1.0, -1.2486671314124558e-16, 1.1446115371280844e-16, 0.7611924317942809, -0.02656112191518626, 0.6479819353822416, 0.1709247806997756, -0.043295859813517544, 0.9843323564049604, -0.4940638022929493, -0.03714083434569276, 0.8686319805809243, -0.9380535262635982, -0.01368965552152596, 0.34621983651450555, -0.9380535262635984, 0.013689655521526, -0.3462198365145052, -0.4940638022929498, 0.037140834345692805, -0.8686319805809242, 0.17092478069977501, 0.04329585981351746, -0.9843323564049604, 0.7611924317942808, 0.026561121915186035, -0.6479819353822418, 0.766044443118978, 0.6427876096865394, 4.162223771374852e-17, 0.600180392586686, 0.46893806389839593, 0.6479819353822416, 0.15876602068524742, 0.07670177840200133, 0.9843323564049604, -0.35460116216191556, -0.34602962027184825, 0.8686319805809243, -0.7097911501922778, -0.6134560684454856, 0.34621983651450555, -0.7273902320925056, -0.5924822993645297, -0.3462198365145051, -0.40234849842357917, -0.2891265607452077, -0.868631980580924, 0.10310593620753823, 0.14303488404240763, -0.9843323564049604, 0.5660340724537752, 0.5096320635906639, -0.6479819353822418, 0.17364817766693041, 0.984807753012208, 1.0405559428437129e-17, 0.15833727742571393, 0.745015917947863, 0.6479819353822416, 0.07231887510431743, 0.16080980205791018, 0.9843323564049604, -0.04921669730238485, -0.4930073011819461, 0.8686319805809243, -0.14940960649604665, -0.9261795691390334, 0.34621983651450544, -0.17637296428337706, -0.9214252016706315, -0.34621983651450516, -0.12236986053634573, -0.4801084247796288, -0.868631980580924, -0.012957321731046021, 0.17584629637219007, -0.9843323564049604, 0.10602207984415839, 0.7542404987825855, -0.6479819353822417, -0.49999999999999983, 0.8660254037844388, 5.202779714218565e-17, -0.3575936095655736, 0.6724925440598942, 0.6479819353822415, -0.04796707587269181, 0.16967313212904853, 0.9843323564049604, 0.27919680720759416, -0.4093013867031801, 0.8686319805809243, 0.48088235258249834, -0.8055333560930862, 0.34621983651450544, 0.45717117368109966, -0.8192230116146123, -0.3462198365145051, 0.21486699508535526, -0.4464422210488733, -0.868631980580924, -0.12295770482708343, 0.1263772723155306, -0.9843323564049604, -0.4035988222287072, 0.645931422144708, -0.6479819353822417, -0.9396926207859083, 0.34202014332566893, 1.1446115371280844e-16, -0.7062024724308442, 0.28530243488418977, 0.6479819353822415, -0.14580869895420143, 0.09914451797018933, 0.9843323564049604, 0.47697102269826097, -0.13407880450778012, 0.8686319805809244, 0.8861641144756548, -0.307969133225146, 0.3462198365145055, 0.8767998385885521, -0.33369726977450415, -0.3462198365145051, 0.4515651957259641, -0.203880740436739, -0.8686319805809242, -0.1754248113118556, 0.017774918015502045, -0.9843323564049604, -0.7243713498794889, 0.23538385435719902, -0.6479819353822417, -0.9396926207859084, -0.3420201433256684, 1.9770562914030543e-16, -0.7243713498794893, -0.2353838543571989, 0.6479819353822415, -0.17542481131185608, -0.0177749180155022, 0.9843323564049604, 0.4515651957259636, 0.20388074043673854, 0.8686319805809244, 0.8767998385885521, 0.3336972697745036, 0.3462198365145055, 0.886164114475655, 0.30796913322514563, -0.34621983651450516, 0.4769710226982617, 0.1340788045077801, -0.868631980580924, -0.14580869895420098, -0.09914451797018904, -0.9843323564049604, -0.706202472430844, -0.2853024348841894, -0.6479819353822418, -0.5000000000000002, -0.8660254037844385, 3.121667828531139e-17, -0.40359882222870747, -0.6459314221447077, 0.6479819353822417, -0.12295770482708376, -0.12637727231553098, 0.9843323564049604, 0.21486699508535517, 0.4464422210488727, 0.8686319805809244, 0.45717117368109983, 0.8192230116146119, 0.34621983651450555, 0.4808823525824988, 0.8055333560930862, -0.34621983651450516, 0.2791968072075946, 0.40930138670318034, -0.8686319805809242, -0.04796707587269164, -0.169673132129048, -0.9843323564049604, -0.3575936095655738, -0.6724925440598937, -0.6479819353822418, 0.17364817766693008, -0.9848077530122081, 0.0, 0.10602207984415808, -0.7542404987825856, 0.6479819353822415, -0.012957321731046051, -0.17584629637219062, 0.9843323564049604, -0.12236986053634538, 0.4801084247796283, 0.8686319805809243, -0.17637296428337665, 0.9214252016706315, 0.3462198365145055, -0.14940960649604637, 0.9261795691390338, -0.3462198365145052, -0.04921669730238475, 0.49300730118194647, -0.8686319805809242, 0.07231887510431731, -0.16080980205790973, -0.9843323564049604, 0.1583372774257136, -0.7450159179478629, -0.6479819353822417, 0.7660444431189778, -0.6427876096865397, 1.0405559428437132e-16, 0.5660340724537753, -0.5096320635906643, 0.6479819353822415, 0.10310593620753863, -0.14303488404240808, 0.9843323564049604, -0.40234849842357867, 0.28912656074520743, 0.8686319805809243, -0.7273902320925054, 0.5924822993645297, 0.3462198365145055, -0.7097911501922778, 0.6134560684454858, -0.34621983651450516, -0.3546011621619159, 0.34602962027184864, -0.8686319805809242, 0.15876602068524703, -0.07670177840200107, -0.9843323564049604, 0.6001803925866858, -0.46893806389839604, -0.6479819353822416], "indices": [0, 9, 10, 0, 10, 1, 1, 10, 11, 1, 11, 2, 2, 11, 12, 2, 12, 3, 3, 12, 13, 3, 13, 4, 4, 13, 14, 4, 14, 5, 5, 14, 15, 5, 15, 6, 6, 15, 16, 6, 16, 7, 7, 16, 17, 7, 17, 8, 8, 17, 9, 8, 9, 0, 9, 18, 19, 9, 19, 10, 10, 19, 20, 10, 20, 11, 11, 20, 21, 11, 21, 12, 12, 21, 22, 12, 22, 13, 13, 22, 23, 13, 23, 14, 14, 23, 24, 14, 24, 15, 15, 24, 25, 15, 25, 16, 16, 25, 26, 16, 26, 17, 17, 26, 18, 17, 18, 9, 18, 27, 28, 18, 28, 19, 19, 28, 29, 19, 29, 20, 20, 29, 30, 20, 30, 21, 21, 30, 31, 21, 31, 22, 22, 31, 32, 22, 32, 23, 23, 32, 33, 23, 33, 24, 24, 33, 34, 24, 34, 25, 25, 34, 35, 25, 35, 26, 26, 35, 27, 26, 27, 18, 27, 36, 37, 27, 37, 28, 28, 37, 38, 28, 38, 29, 29, 38, 39, 29, 39, 30, 30, 39, 40, 30, 40, 31, 31, 40, 41, 31, 41, 32, 32, 41, 42, 32, 42, 33, 33, 42, 43, 33, 43, 34, 34, 43, 44, 34, 44, 35, 35, 44, 36, 35, 36, 27, 36, 45, 46, 36, 46, 37, 37, 46, 47, 37, 47, 38, 38, 47, 48, 38, 48, 39, 39, 48, 49, 39, 49, 40, 40, 49, 50, 40, 50, 41, 41, 50, 51, 41, 51, 42, 42, 51, 52, 42, 52, 43, 43, 52, 53, 43, 53, 44, 44, 53, 45, 44, 45, 36, 45, 54, 55, 45, 55, 46, 46, 55, 56, 46, 56, 47, 47, 56, 57, 47, 57, 48, 48, 57, 58, 48, 58, 49, 49, 58, 59, 49, 59, 50, 50, 59, 60, 50, 60, 51, 51, 60, 61, 51, 61, 52, 52, 61, 62, 52, 62, 53, 53, 62, 54, 53, 54, 45, 54, 63, 64, 54, 64, 55, 55, 64, 65, 55, 65, 56, 56, 65, 66, 56, 66, 57, 57, 66, 67, 57, 67, 58, 58, 67, 68, 58, 68, 59, 59, 68, 69, 59, 69, 60, 60, 69, 70, 60, 70, 61, 61, 70, 71, 61, 71, 62, 62, 71, 63, 62, 63, 54, 63, 72, 73, 63, 73, 64, 64, 73, 74, 64, 74, 65, 65, 74, 75, 65, 75, 66, 66, 75, 76, 66, 76, 67, 67, 76, 77, 67, 77, 68, 68, 77, 78, 68, 78, 69, 69, 78, 79, 69, 79, 70, 70, 79, 80, 70, 80, 71, 71, 80, 72, 71, 72, 63, 72, 0, 1, 72, 1, 73, 73, 1, 2, 73, 2, 74, 74, 2, 3, 74, 3, 75, 75, 3, 4, 75, 4, 76, 76, 4, 5, 76, 5, 77, 77, 5, 6, 77, 6, 78, 78, 6, 7, 78, 7, 79, 79, 7, 8, 79, 8, 80, 80, 8, 0, 80, 0, 72], "colors": [0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.0, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.6666666666666666, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "texture": [0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, 0.24947233853872722, -0.2624405901539836, -0.26244059015398247, -0.2624405901539836, -0.26244059015398247, -0.2624405901539836, -0.2624405901539836, -0.2624405901539836, -0.2624405901539836, -0.26244059015398247, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 0.6569298223613108, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, 1.1154977423231687, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.5632080565148478, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.669898073976566, -0.6698980739765679, -0.6698980739765679, -0.669898073976566, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -0.6165530652456971, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -1.8900359528527273, -0.9706655403374316, -0.9706655403374316, -0.9706655403374329, -0.9706655403374316, -0.9706655403374316, -0.9706655403374316, -0.9706655403374329, -0.9706655403374316, -0.9706655403374316], "frequencies": [146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 146.66666666666666, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0], "z3_labels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2], "n_vertices": 81, "n_faces": 162, "euler": 0, "surface_type": "torus"};
+const nVerts = meshData.n_vertices;
+
+// ═══════════════════════════════════════════════════════════════
+// SCENE
+// ═══════════════════════════════════════════════════════════════
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x080810);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(5, 3, 5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x303040, 0.5));
+const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+sun.position.set(5, 8, 5);
+scene.add(sun);
+scene.add(new THREE.DirectionalLight(0x4466aa, 0.3).position.set(-3, -2, -4));
+
+// ═══════════════════════════════════════════════════════════════
+// GEOMETRY + DEFORMATION STATE
+// ═══════════════════════════════════════════════════════════════
+const geometry = new THREE.BufferGeometry();
+
+// Positions (mutable — deformation target)
+const restPositions = new Float32Array(meshData.positions);   // original
+const currPositions = new Float32Array(meshData.positions);   // current
+const velocities = new Float32Array(nVerts * 3);              // per-vertex velocity
+geometry.setAttribute('position', new THREE.BufferAttribute(currPositions, 3));
+
+// Colors (mutable — shift with deformation)
+const restColors = new Float32Array(meshData.colors);
+const currColors = new Float32Array(meshData.colors);
+geometry.setAttribute('color', new THREE.BufferAttribute(currColors, 3));
+
+// Indices
+geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(meshData.indices), 1));
+geometry.computeVertexNormals();
+
+// Material
+const material = new THREE.MeshPhongMaterial({
+    vertexColors: true, side: THREE.DoubleSide,
+    shininess: 30, specular: new THREE.Color(0x222233),
+});
+const meshObj = new THREE.Mesh(geometry, material);
+scene.add(meshObj);
+
+// Wireframe
+const wireMat = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x223344, transparent: true, opacity: 0.08 });
+const wireObj = new THREE.Mesh(geometry, wireMat);
+scene.add(wireObj);
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIO CONTEXT (Web Audio API)
+// ═══════════════════════════════════════════════════════════════
+let audioCtx = null;
+let oscillator = null;
+let gainNode = null;
+
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    oscillator = audioCtx.createOscillator();
+    gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 0;
+    gainNode.gain.value = 0;
+    oscillator.start();
+}
+
+function setFrequency(freq, amplitude) {
+    if (!audioCtx) return;
+    oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
+    gainNode.gain.setTargetAtTime(amplitude * 0.15, audioCtx.currentTime, 0.05);
+}
+
+function silenceAudio() {
+    if (!audioCtx) return;
+    gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RAYCASTING + DEFORMATION
+// ═══════════════════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let isDragging = false;
+let dragVertex = -1;
+let dragPlane = new THREE.Plane();
+let dragOffset = new THREE.Vector3();
+
+function getClosestVertex(point) {
+    let minDist = Infinity;
+    let closest = -1;
+    for (let i = 0; i < nVerts; i++) {
+        const dx = currPositions[i*3] - point.x;
+        const dy = currPositions[i*3+1] - point.y;
+        const dz = currPositions[i*3+2] - point.z;
+        const dist = dx*dx + dy*dy + dz*dz;
+        if (dist < minDist) {
+            minDist = dist;
+            closest = i;
+        }
+    }
+    return closest;
+}
+
+function applyDeformation(centerIdx, displacement) {
+    const cx = restPositions[centerIdx * 3];
+    const cy = restPositions[centerIdx * 3 + 1];
+    const cz = restPositions[centerIdx * 3 + 2];
+
+    for (let i = 0; i < nVerts; i++) {
+        const rx = restPositions[i * 3];
+        const ry = restPositions[i * 3 + 1];
+        const rz = restPositions[i * 3 + 2];
+
+        const dx = rx - cx;
+        const dy = ry - cy;
+        const dz = rz - cz;
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+        if (dist < INFLUENCE_RADIUS) {
+            // Gaussian falloff (sigma = INFLUENCE_RADIUS * 2/3)
+            const sigma = INFLUENCE_RADIUS * GAP;
+            const weight = Math.exp(-(dist * dist) / (2 * sigma * sigma));
+
+            // Clamp displacement
+            const scale = Math.min(weight, 1.0);
+            currPositions[i*3]   = restPositions[i*3]   + displacement.x * scale;
+            currPositions[i*3+1] = restPositions[i*3+1] + displacement.y * scale;
+            currPositions[i*3+2] = restPositions[i*3+2] + displacement.z * scale;
+
+            // Color response: hue rotates proportional to deformation
+            // The spectral gap couples geometry→color
+            const deformMag = Math.sqrt(
+                displacement.x*displacement.x +
+                displacement.y*displacement.y +
+                displacement.z*displacement.z
+            ) * scale;
+
+            const z3 = meshData.z3_labels[i];
+            const hueShift = deformMag * GAP;  // gap couples geo→color
+
+            // Shift each RGB channel
+            const rr = restColors[i*3];
+            const gg = restColors[i*3+1];
+            const bb = restColors[i*3+2];
+
+            // Rotate in color space by hueShift (simplified HSV rotation)
+            const cosH = Math.cos(hueShift * Math.PI);
+            const sinH = Math.sin(hueShift * Math.PI);
+            currColors[i*3]   = Math.max(0, Math.min(1, rr * cosH - gg * sinH * GAP));
+            currColors[i*3+1] = Math.max(0, Math.min(1, gg * cosH + rr * sinH * GAP));
+            currColors[i*3+2] = Math.max(0, Math.min(1, bb + deformMag * (1 - GAP)));
+        }
+    }
+
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.color.needsUpdate = true;
+    geometry.computeVertexNormals();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ELASTIC RECOVERY — spring constant IS the spectral gap
+// ═══════════════════════════════════════════════════════════════
+function elasticRecover(dt) {
+    let totalEnergy = 0;
+    let maxDisplacement = 0;
+
+    for (let i = 0; i < nVerts; i++) {
+        const i3 = i * 3;
+
+        // Displacement from rest
+        const dx = currPositions[i3]   - restPositions[i3];
+        const dy = currPositions[i3+1] - restPositions[i3+1];
+        const dz = currPositions[i3+2] - restPositions[i3+2];
+        const disp = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+        if (disp > 0.0001) {
+            // Restoring force: F = -k * x, where k = 2/3 (spectral gap)
+            const fx = -GAP * dx;
+            const fy = -GAP * dy;
+            const fz = -GAP * dz;
+
+            // Damped velocity update (critical damping at sqrt(4*k*m) with m=1)
+            const damping = 2 * Math.sqrt(GAP);  // critical damping
+            velocities[i3]   = (velocities[i3]   + fx * dt) * (1 - damping * dt);
+            velocities[i3+1] = (velocities[i3+1] + fy * dt) * (1 - damping * dt);
+            velocities[i3+2] = (velocities[i3+2] + fz * dt) * (1 - damping * dt);
+
+            // Position update
+            currPositions[i3]   += velocities[i3]   * dt;
+            currPositions[i3+1] += velocities[i3+1] * dt;
+            currPositions[i3+2] += velocities[i3+2] * dt;
+
+            // Color recovery (same rate)
+            currColors[i3]   += (restColors[i3]   - currColors[i3])   * GAP * dt;
+            currColors[i3+1] += (restColors[i3+1] - currColors[i3+1]) * GAP * dt;
+            currColors[i3+2] += (restColors[i3+2] - currColors[i3+2]) * GAP * dt;
+
+            // Energy = 0.5 * k * x^2 (potential) + 0.5 * m * v^2 (kinetic)
+            const v2 = velocities[i3]*velocities[i3] + velocities[i3+1]*velocities[i3+1] + velocities[i3+2]*velocities[i3+2];
+            totalEnergy += 0.5 * GAP * disp * disp + 0.5 * v2;
+            maxDisplacement = Math.max(maxDisplacement, disp);
+        }
+    }
+
+    if (maxDisplacement > 0.0001) {
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.color.needsUpdate = true;
+        geometry.computeVertexNormals();
+    }
+
+    return { totalEnergy, maxDisplacement };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONSERVATION LAW: Z₃ charge
+// ═══════════════════════════════════════════════════════════════
+function computeZ3Charge() {
+    let charge = 0;
+    for (let i = 0; i < nVerts; i++) {
+        charge = (charge + meshData.z3_labels[i]) % Z3_ORDER;
+    }
+    return charge;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MOUSE EVENTS
+// ═══════════════════════════════════════════════════════════════
+renderer.domElement.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return; // left click only
+
+    initAudio();
+
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(meshObj);
+
+    if (intersects.length > 0) {
+        isDragging = true;
+        controls.enabled = false;
+
+        const hit = intersects[0];
+        dragVertex = getClosestVertex(hit.point);
+
+        // Create drag plane perpendicular to camera
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        dragPlane.setFromNormalAndCoplanarPoint(camDir, hit.point);
+        dragOffset.copy(hit.point);
+
+        // Play frequency of hit vertex
+        const freq = meshData.frequencies[dragVertex];
+        setFrequency(freq, GAP);
+        document.getElementById('freq-display').textContent = freq.toFixed(0) + ' Hz';
+    }
+});
+
+renderer.domElement.addEventListener('mousemove', (e) => {
+    if (!isDragging || dragVertex < 0) return;
+
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const target = new THREE.Vector3();
+    raycaster.ray.intersectPlane(dragPlane, target);
+
+    if (target) {
+        const displacement = target.sub(dragOffset);
+
+        // Clamp
+        const mag = displacement.length();
+        if (mag > MAX_DEFORM) displacement.multiplyScalar(MAX_DEFORM / mag);
+
+        applyDeformation(dragVertex, displacement);
+
+        // Sound: frequency shifts with deformation (Doppler-like, scaled by gap)
+        const baseFreq = meshData.frequencies[dragVertex];
+        const shiftedFreq = baseFreq * (1 + mag * GAP * 0.5);
+        setFrequency(shiftedFreq, Math.min(mag * GAP, 0.8));
+        document.getElementById('freq-display').textContent = shiftedFreq.toFixed(0) + ' Hz';
+    }
+});
+
+renderer.domElement.addEventListener('mouseup', () => {
+    if (isDragging) {
+        isDragging = false;
+        dragVertex = -1;
+        controls.enabled = true;
+        silenceAudio();
+        document.getElementById('freq-display').textContent = 'recovering...';
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER LOOP
+// ═══════════════════════════════════════════════════════════════
+const z3Charge = computeZ3Charge();
+let lastTime = performance.now();
+
+function animate(now) {
+    requestAnimationFrame(animate);
+    const dt = Math.min((now - lastTime) / 1000, 0.05) * 3; // scaled time
+    lastTime = now;
+
+    // Elastic recovery when not dragging
+    let stats = { totalEnergy: 0, maxDisplacement: 0 };
+    if (!isDragging) {
+        stats = elasticRecover(dt);
+    } else {
+        // Compute energy while dragging
+        for (let i = 0; i < nVerts; i++) {
+            const i3 = i * 3;
+            const dx = currPositions[i3] - restPositions[i3];
+            const dy = currPositions[i3+1] - restPositions[i3+1];
+            const dz = currPositions[i3+2] - restPositions[i3+2];
+            stats.totalEnergy += 0.5 * GAP * (dx*dx + dy*dy + dz*dz);
+            stats.maxDisplacement = Math.max(stats.maxDisplacement, Math.sqrt(dx*dx+dy*dy+dz*dz));
+        }
+    }
+
+    // Update HUD
+    const e = stats.totalEnergy;
+    document.getElementById('energy-val').textContent = e.toFixed(3);
+    document.getElementById('energy-fill').style.width = Math.min(e / 2 * 100, 100) + '%';
+    document.getElementById('total-energy').textContent = e.toFixed(3);
+    document.getElementById('z3-charge').textContent = z3Charge + ' (conserved)';
+
+    // Channel bars (all proportional to deformation, scaled by 2/3)
+    const d = stats.maxDisplacement;
+    const pct = Math.min(d / MAX_DEFORM * 100, 100);
+    document.getElementById('bar-geo').style.width = pct + '%';
+    document.getElementById('bar-col').style.width = (pct * GAP) + '%';
+    document.getElementById('bar-snd').style.width = (pct * GAP * GAP) + '%';
+    document.getElementById('bar-tex').style.width = (pct * GAP * GAP * GAP) + '%';
+
+    if (!isDragging && stats.maxDisplacement < 0.001 && stats.totalEnergy < 0.0001) {
+        document.getElementById('freq-display').textContent = '\u2014';
+    }
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate(performance.now());
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@ A complete mathematical system derived from PURE DISTINCTION. No constants assum
 📊 **[PROPERTY_SCORECARD.md](PROPERTY_SCORECARD.md)** — Detailed status of all 17 properties with evidence
 🔗 **[DERIVATION_CHAIN.md](DERIVATION_CHAIN.md)** — Complete chain from observations → constants → code
 📁 **[INDEX.md](INDEX.md)** — Full spatial map and file placement rules
+📚 **[MODULE_CATALOG.md](MODULE_CATALOG.md)** — Complete documentation of all 30 modules
 
 ## Directory Structure
 

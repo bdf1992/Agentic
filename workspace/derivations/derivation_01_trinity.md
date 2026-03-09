@@ -45,9 +45,12 @@ This creates the group structure:
 - ∂(∂) = ∂ (fixed point)
 
 ### Case 2: ∂ Creates a Cycle
-If ∂(∂) ≠ ∂, then we need a fourth element to complete the cycle.
-But O1 says "defining one thing creates three" - not four.
-So this case is excluded by the observation.
+If ∂(∂) ≠ ∂, then we must consider what ∂(∂) could be:
+- It cannot be A (that would make ∂ = ∂⁻¹(A) = ¬A, contradiction)
+- It cannot be ¬A (that would make ∂ = ∂⁻¹(¬A) = A, contradiction)
+- It cannot be a fourth element (O1 says we get exactly three)
+
+Therefore, we're forced to reconsider: the distinction operator must cycle through ALL three elements, including itself.
 
 ## Therefore: The Z₃ Structure Emerges
 

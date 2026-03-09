@@ -10,14 +10,18 @@ workspace/
 ├── algebra/          ← Core algebraic implementations (.py)
 │   ├── trinity_algebra.py         Z₃ from single distinction (O1)
 │   ├── quaternion_algebra.py      Q₈ from binary distinction (O2)
+│   ├── quaternion_spectral.py     Spectral analysis of Q₈ group
 │   ├── topology_algebra.py        U(1), winding numbers, SU(2)→SO(3) (O4, O7)
 │   ├── conservation_algebra.py    Conservation laws CL1-CL3 (O3, O6)
 │   ├── fixedpoint_algebra.py      Fixed points, self-reference (O8)
 │   ├── memory_algebra.py          Heisenberg-Weyl from counting (O5)
 │   ├── symmetry_algebra.py        Information economics of symmetry (O6)
+│   ├── boundary_mediator.py       Boundaries as active mediators (O3)
+│   ├── category_distinction.py    Category theory from distinction
 │   ├── surface_algebra.py         Surface-level algebraic structures
 │   ├── shape_memory.py            Deformation memory (Property 16)
 │   ├── spectral_gap_proof.py      Spectral gap verification
+│   ├── spectral_gap_audit.py      Complete spectral gap validation
 │   └── sensory_manifold.py        Cohesive sensory system (Property 18)
 │
 ├── derivations/      ← Mathematical proof documents (.md)
@@ -35,7 +39,19 @@ workspace/
 │
 ├── demos/            ← Runnable demonstrations and validators (.py)
 │   ├── forced_structures.py       Original complete derivation
-│   └── unified_demonstration.py   Full 17/17 property demo
+│   ├── unified_demonstration.py   Full 17/17 property demo
+│   ├── ultimate_confluence.py     Shows all structures are ONE structure
+│   ├── observation_unification.py Unifies all 9 observations
+│   ├── full_system_test.py        Complete system integration test
+│   ├── webgl_renderer.py          Interactive 3D WebGL renderer (generates HTML)
+│   ├── audio_renderer.py          WAV audio from eigenvalue harmonics
+│   ├── deformation_renderer.py     Interactive deformation with coherent channel response
+│   ├── fractal_renderer.py        Self-recursive distinction fractal (Property 9)
+│   ├── render_output.html         Generated WebGL visualization (open in browser)
+│   ├── deformation_output.html    Generated deformation demo (open in browser)
+│   ├── fractal_output.html        Generated fractal zoom demo (open in browser)
+│   ├── distinction_chord.wav      Generated Z₃ augmented triad audio
+│   └── eigenvalue_sequence.wav    Generated eigenvalue frequency sequence
 │
 ├── bridges/          ← Cross-domain connectors (.py)
 │   ├── llm_bridge.py              LLM embedding integration
