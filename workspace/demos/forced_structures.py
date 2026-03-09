@@ -9,6 +9,8 @@ they are mathematical necessities.
 Based on experiments/seeds/cartography_v1.json observations.
 """
 
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'algebra'))
 import numpy as np
 from trinity_algebra import TrinityAlgebra
 from quaternion_algebra import QuaternionAlgebra

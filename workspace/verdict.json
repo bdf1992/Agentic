@@ -1,0 +1,111 @@
+{
+  "run_id": "workspace",
+  "timestamp": "2026-03-09 01:31:25",
+  "mechanical": {
+    "py_files": [
+      "algebra\\conservation_algebra.py",
+      "algebra\\fixedpoint_algebra.py",
+      "algebra\\memory_algebra.py",
+      "algebra\\quaternion_algebra.py",
+      "algebra\\sensory_manifold.py",
+      "algebra\\shape_memory.py",
+      "algebra\\spectral_gap_proof.py",
+      "algebra\\surface_algebra.py",
+      "algebra\\symmetry_algebra.py",
+      "algebra\\topology_algebra.py",
+      "algebra\\trinity_algebra.py",
+      "algebra\\__init__.py",
+      "bridges\\llm_bridge.py",
+      "bridges\\unified_confluences.py",
+      "bridges\\__init__.py",
+      "demos\\forced_structures.py",
+      "demos\\full_system_test.py",
+      "demos\\observation_unification.py",
+      "demos\\ultimate_confluence.py",
+      "demos\\unified_demonstration.py",
+      "demos\\__init__.py",
+      "validation\\verify_all_properties.py",
+      "validation\\__init__.py"
+    ],
+    "py_results": {
+      "algebra\\conservation_algebra.py": {
+        "runs": true
+      },
+      "algebra\\fixedpoint_algebra.py": {
+        "runs": true
+      },
+      "algebra\\memory_algebra.py": {
+        "runs": true
+      },
+      "algebra\\quaternion_algebra.py": {
+        "runs": true
+      },
+      "algebra\\sensory_manifold.py": {
+        "runs": true
+      },
+      "algebra\\shape_memory.py": {
+        "runs": true
+      },
+      "algebra\\spectral_gap_proof.py": {
+        "runs": true
+      },
+      "algebra\\surface_algebra.py": {
+        "runs": true
+      },
+      "algebra\\symmetry_algebra.py": {
+        "runs": true
+      },
+      "algebra\\topology_algebra.py": {
+        "runs": true
+      },
+      "algebra\\trinity_algebra.py": {
+        "runs": true
+      },
+      "algebra\\__init__.py": {
+        "runs": true
+      },
+      "bridges\\llm_bridge.py": {
+        "runs": true
+      },
+      "bridges\\unified_confluences.py": {
+        "runs": true
+      },
+      "bridges\\__init__.py": {
+        "runs": true
+      },
+      "demos\\forced_structures.py": {
+        "runs": true
+      },
+      "demos\\full_system_test.py": {
+        "runs": true
+      },
+      "demos\\observation_unification.py": {
+        "runs": true
+      },
+      "demos\\ultimate_confluence.py": {
+        "runs": true
+      },
+      "demos\\unified_demonstration.py": {
+        "runs": true
+      },
+      "demos\\__init__.py": {
+        "runs": true
+      },
+      "validation\\verify_all_properties.py": {
+        "runs": true
+      },
+      "validation\\__init__.py": {
+        "runs": true
+      }
+    },
+    "all_code_runs": true,
+    "has_eigenvalues": true,
+    "has_numerical_output": true,
+    "smuggled_constants": [],
+    "artifact_count": 61
+  },
+  "llm_scores": {
+    "skipped": true
+  },
+  "verdict": "MECHANICAL_ONLY"
+}

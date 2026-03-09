@@ -58,6 +58,14 @@ class TrinityAlgebra:
         """Apply the distinction operator."""
         return self.distinction_map[element]
 
+    def generate_states(self):
+        """Generate all states in Z₃."""
+        return self.elements.copy()
+
+    def distinction_operator(self, state: int) -> int:
+        """Apply the distinction operator to a state."""
+        return self.distinction_map[state]
+
     def power_of_distinction(self, n: int) -> Dict[int, int]:
         """Show what happens when we apply distinction n times."""
         result = {}
