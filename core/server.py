@@ -163,6 +163,13 @@ async def dashboard():
         .severity-warning { border-left: 3px solid #fa0; }
         .severity-action_required { border-left: 3px solid #f44; }
         .severity-info { border-left: 3px solid #4a4; }
+        .tier-gold { border-left: 3px solid #ffd700; }
+        .tier-silver { border-left: 3px solid #c0c0c0; }
+        .tier-bronze { border-left: 3px solid #cd7f32; }
+        .tier-label { font-weight: bold; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .tier-label.gold { color: #ffd700; }
+        .tier-label.silver { color: #c0c0c0; }
+        .tier-label.bronze { color: #cd7f32; }
         .finding { margin: 0.5rem 0; }
         .btn {
             background: #333; border: 1px solid #555; color: #ddd;
@@ -200,13 +207,27 @@ async def dashboard():
             if (data.pending_review.length === 0) {
                 pendingEl.innerHTML = '<div class="card">Nothing pending.</div>';
             } else {
-                pendingEl.innerHTML = data.pending_review.map(r => `
-                    <div class="card severity-${r.severity}">
-                        <div class="finding">${r.finding}</div>
+                pendingEl.innerHTML = data.pending_review.map(r => {
+                    // Detect tier from finding text
+                    let tierClass = 'severity-' + r.severity;
+                    let tierLabel = '';
+                    if (r.finding && r.finding.includes('GOLD')) {
+                        tierClass = 'tier-gold';
+                        tierLabel = '<span class="tier-label gold">GOLD</span> ';
+                    } else if (r.finding && r.finding.includes('SILVER')) {
+                        tierClass = 'tier-silver';
+                        tierLabel = '<span class="tier-label silver">SILVER</span> ';
+                    } else if (r.finding && r.finding.includes('BRONZE')) {
+                        tierClass = 'tier-bronze';
+                        tierLabel = '<span class="tier-label bronze">BRONZE</span> ';
+                    }
+                    return `
+                    <div class="card ${tierClass}">
+                        <div class="finding">${tierLabel}${r.finding}</div>
                         <button class="btn approve" onclick="decide('${r.id}','approve')">Approve</button>
                         <button class="btn reject" onclick="decide('${r.id}','reject')">Reject</button>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             }
 
             const recentEl = document.getElementById('recent');
