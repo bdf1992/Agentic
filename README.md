@@ -62,6 +62,7 @@ New or unclassified tests default to Gold. Better to over-alert than miss a real
 The platform's first experiment asks: **can an agentic loop, given only observations about distinction (not our specific map), derive a self-consistent algebraic structure?**
 
 ### Seed Observations (no constants, no named structures)
+- A unary logical position is incoherent — to say "I am" already presupposes "I am not" and the act of choosing between them. Identity requires difference. Claiming to be one thing with no outside is more radical than seeing a bigger picture, because it pretends a distinction hasn't been made when it has.
 - Defining one thing creates three: the thing, its complement, and the distinction itself
 - Binary distinction creates four states: neither, A, B, both
 - The boundary between things is itself a thing

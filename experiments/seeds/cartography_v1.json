@@ -5,6 +5,11 @@
 
   "observations": [
     {
+      "id": "O0",
+      "statement": "A unary logical position is incoherent. To say 'I am' already presupposes 'I am not' and the act of distinguishing between them. Identity requires difference. A system that claims to be one thing, with no outside and no boundary, cannot even state itself without invoking the structure it denies. Unary logic is not simpler than binary — it is more radical, because it pretends a distinction hasn't been made when it has.",
+      "type": "logical"
+    },
+    {
       "id": "O1",
       "statement": "Defining one thing creates three: the thing, its complement, and the distinction itself.",
       "type": "ontological"
